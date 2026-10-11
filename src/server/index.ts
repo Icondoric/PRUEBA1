@@ -11,10 +11,18 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import type { DB } from '@/lib/db';
 import { moduloClientes } from '@/modules/clientes';
+import { moduloMembresias } from '@/modules/membresias';
+import { moduloUsuarios } from '@/modules/usuarios';
 import { manejadorDeErrores } from './middleware/errores';
 
 export function crearApp(db: DB) {
   const clientes = moduloClientes(db);
+  const usuarios = moduloUsuarios(db);
+  const membresias = moduloMembresias(db, {
+    clientes: clientes.servicio,
+    // Provisorio hasta que haya login: ver modules/usuarios.
+    operadorActual: () => usuarios.servicio.operadorActual().id,
+  });
 
   const app = new Hono()
     .use('*', logger())
@@ -25,7 +33,9 @@ export function crearApp(db: DB) {
       c.json({ error: 'NO_ENCONTRADO', mensaje: 'Esa ruta no existe' }, 404),
     )
     .get('/api/salud', (c) => c.json({ ok: true }))
-    .route('/api/clientes', clientes.rutas);
+    .route('/api/clientes', clientes.rutas)
+    .route('/api/planes', membresias.rutasPlanes)
+    .route('/api/membresias', membresias.rutas);
 
   return app;
 }

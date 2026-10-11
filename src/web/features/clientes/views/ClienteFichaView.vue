@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
- * Ficha del cliente: sus datos. La membresía vigente y el historial se suman
- * acá cuando exista el módulo de membresías.
+ * Ficha del cliente: sus datos y, debajo, su membresía e historial (que son de
+ * la feature de membresías).
  */
 import { ArrowLeft, Ban, Pencil } from '@lucide/vue';
 import { refDebounced } from '@vueuse/core';
 import { computed } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
+import MembresiasDelCliente from '@/web/features/membresias/components/MembresiasDelCliente.vue';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
 import { formatearCi, formatearFecha } from '@/web/shared/lib/formato';
@@ -146,6 +147,8 @@ const confirmacion = computed(() => {
           <dd class="max-w-prose text-sm">{{ cliente.notas }}</dd>
         </div>
       </dl>
+
+      <MembresiasDelCliente :cliente-id="cliente.id" />
     </template>
 
     <template v-else>

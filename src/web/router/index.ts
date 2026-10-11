@@ -35,6 +35,12 @@ export const router = createRouter({
       meta: { titulo: 'Editar cliente' },
     },
     {
+      path: '/clientes/:id(\\d+)/membresias/nueva',
+      name: 'membresia-nueva',
+      component: () => import('@/web/features/membresias/views/MembresiaVentaView.vue'),
+      meta: { titulo: 'Vender membresía' },
+    },
+    {
       path: '/:resto(.*)*',
       name: 'no-encontrada',
       component: () => import('@/web/shared/layout/NoEncontradaView.vue'),
