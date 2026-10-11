@@ -1,13 +1,13 @@
 /**
  * Decisión de acceso. Función PURA, sin DB, sin red, sin reloj.
  *
- * La usan dos lugares:
- *   1. el servidor, con datos frescos de Postgres
- *   2. el caché offline del navegador, con el snapshot en IndexedDB
+ * Es el ÚNICO lugar donde se decide si alguien entra. La llama el servidor con
+ * los datos de SQLite; el check-in le pega a localhost, así que no existe una
+ * copia offline de esta regla en el navegador.
  *
- * Que sea la misma función es lo que garantiza que online y offline nunca
- * contradigan. Si duplicás esta lógica, en algún momento el socio va a entrar
- * con internet y rebotar sin internet, y nadie va a entender por qué.
+ * Si duplicás esta lógica (en una ruta, en un componente de Vue, en un
+ * reporte), en algún momento dos pantallas van a decir cosas distintas del
+ * mismo socio y nadie va a entender por qué.
  */
 
 import { type FechaISO, diasEntre, esPosteriorOIgual } from '@/lib/fechas';

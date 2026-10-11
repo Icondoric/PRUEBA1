@@ -64,7 +64,8 @@ las verifica ESLint en el pre-commit.
 - **Solo `hoyEnZona()` lee el reloj.** Todo lo demás recibe `hoy` por parámetro.
 - **Renovar crea una membresía NUEVA.** Jamás `UPDATE` de `fecha_fin`. El
   historial es el producto: de ahí sale la antigüedad del socio.
-- **"Vencido" se CALCULA** (`fecha_fin >= hoy`). Prohibido guardarlo: se
+- **"Vencido" se CALCULA** (vigente = `fecha_fin >= hoy`; vencido =
+  `fecha_fin < hoy`). Prohibido guardarlo: se
   desactualiza a medianoche y nadie se entera.
 - **Renovación encadenada**: anticipada arranca al día siguiente del
   vencimiento anterior; vencida arranca hoy. Vive en
@@ -109,6 +110,31 @@ disfraces una falla técnica de mensaje amable.
 - Un pase por sesión vigente dice "válido hoy" en verde, no "vence hoy" en
   amarillo. Avisar que renueve un pase diario es ruido.
 
+## Interfaz — leé la skill antes de tocar una pantalla
+
+**Antes de escribir o revisar cualquier cosa en `src/web/`, cargá la skill
+`apple-design`** (`.claude/skills/apple-design/SKILL.md`). Define cómo se
+comporta la interfaz; los valores concretos (colores, radios, espaciado) los
+ponen los tokens de shadcn-vue/Tailwind del repo, y esos ganan.
+
+Esto es un back-office de escritorio manejado con teclado, así que la skill se
+aplica **selectivamente**, como ella misma indica:
+
+- **Sí aplican**: §1 respuesta (<100ms), §3 interrumpibilidad, §7 consistencia
+  espacial, §14 accesibilidad y movimiento reducido, §15 tipografía,
+  §16 formularios y foco, §17 los cuatro estados (cargando, vacío, error,
+  cargado), §18 tablas y datos densos, §19 íconos y microcopy.
+- **No aplican**: §2, §5, §6, §9, §10 (arrastre, inercia, rubber-banding,
+  gestos). No agregues gestos ni springs a una tabla o a un formulario.
+- **La pantalla de check-in es un kiosco**: ahí mandan tamaño, contraste y
+  latencia. El movimiento es decoración y no va.
+- **Sin dependencias de animación** (Motion, etc.) sin preguntar: lo que haga
+  falta se resuelve con CSS.
+- Microcopy en español y con el vocabulario del dominio: siempre "cliente",
+  "socio", "eventual", "membresía", "pago". Un concepto, una palabra.
+- Antes de dar una pantalla por terminada, pasá el "Review checklist" del
+  final de la skill.
+
 ## Pendiente de confirmar con el dueño
 
 NO implementar hasta que el usuario lo confirme:
@@ -122,13 +148,17 @@ NO implementar hasta que el usuario lo confirme:
 
 - Dominio en español (cliente, membresía, pago, ingreso, visita); tipos e
   infraestructura en inglés.
-- Frontend por funcionalidad: `web/features/<nombre>/{api,views,components}`
-  y `web/shared/` para lo realmente compartido.
+- Frontend por funcionalidad:
+  `src/web/features/<nombre>/{api,views,components}` y `src/web/shared/` para
+  lo realmente compartido.
 - Todo dato del servidor pasa por `@tanstack/vue-query`.
 - Los esquemas Zod se comparten entre backend y formularios.
 
 ## Nunca
 
+- **No hagas commits** (ni `git commit`, ni `git push`, ni ramas). Al terminar
+  una tarea, con typecheck, lint y tests en verde, recordale al usuario que
+  haga el commit y proponele el mensaje. El commit lo hace él.
 - No agregues dependencias sin preguntar.
 - No edites una migración ya aplicada; creá una nueva con `pnpm db:generate`.
 - No uses `any`, ni `as` para callar al type checker.

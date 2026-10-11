@@ -110,13 +110,15 @@ pnpm test   # 60 tests tienen que pasar ANTES de abrir Claude Code
 >    rutas de variables de entorno.
 >
 > Antes de escribir código mostrame el plan y esperá que lo apruebe.
-> Al terminar: `pnpm typecheck && pnpm lint && pnpm test` en verde y un commit.
+> Al terminar: `pnpm typecheck && pnpm lint && pnpm test` en verde. NO hagas el
+> commit: recordame que lo haga yo y proponeme el mensaje.
 
 ---
 
 ## Paso 2 — Las siguientes rebanadas
 
-Una por sesión. Plan mode primero, commit al final. **No las pidas juntas.**
+Una por sesión. Plan mode primero; al final el commit lo hacés vos, no el
+agente. **No las pidas juntas.**
 En cada una, la instrucción base es la misma: *seguí la estructura de
 `modules/clientes`*.
 
@@ -165,9 +167,13 @@ Con `clientes` y `membresias` hechos, crear módulos ya es repetitivo:
 
 ## Lo que más importa, más que el stack
 
+- **En toda rebanada con pantallas, la skill `apple-design` primero.** Está en
+  `.claude/skills/apple-design/` y el `CLAUDE.md` dice qué secciones aplican a
+  un back-office y cuáles no. Si el agente no la menciona en el plan, pedísela.
 - **Plan mode antes de cada rebanada.** Leé el plan, corregilo, recién después
   dejalo escribir. Es el punto más barato para atajar un malentendido.
-- **Un commit por rebanada.** El pre-commit corre typecheck, lint y tests: si
+- **Un commit por rebanada, hecho por vos.** El agente no commitea: te avisa
+  cuando la rebanada está lista y te propone el mensaje. El pre-commit corre typecheck, lint y tests: si
   pasa, no rompiste nada de lo anterior.
 - **Si rompe un test de `renovacion`, `precios`, `acceso` o `cliente`, el que
   está mal es el código nuevo.** Decíselo explícitamente cuando pase.

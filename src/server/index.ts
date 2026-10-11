@@ -19,6 +19,11 @@ export function crearApp(db: DB) {
   const app = new Hono()
     .use('*', logger())
     .onError(manejadorDeErrores)
+    // Mismo contrato { error, mensaje } que el resto: una ruta de API que no
+    // existe no debe devolver texto plano ni el HTML de la SPA.
+    .notFound((c) =>
+      c.json({ error: 'NO_ENCONTRADO', mensaje: 'Esa ruta no existe' }, 404),
+    )
     .get('/api/salud', (c) => c.json({ ok: true }))
     .route('/api/clientes', clientes.rutas);
 

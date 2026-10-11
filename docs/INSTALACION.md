@@ -21,11 +21,25 @@ C:\Gimnasio\            (o ~/Gimnasio en Mac/Linux)
 2. Copiar la carpeta `app` al disco.
 3. Desde esa carpeta:
    ```
-   npm install --omit=dev
-   npm run db:migrate
-   npm start
+   pnpm install --prod
+   pnpm start
    ```
+   La carpeta `app` ya trae `dist/` compilado (se genera con `pnpm build` en
+   la máquina de desarrollo). Las migraciones de la base se aplican solas cada
+   vez que arranca el sistema: no hay un paso aparte.
 4. Abrir `http://localhost:3000` en el navegador.
+
+### Variables de entorno
+
+Todas son opcionales; los defaults sirven para la instalación de arriba.
+
+| Variable | Default | Para qué |
+|---|---|---|
+| `GYM_DB` | `./datos/gimnasio.db` | Archivo de la base |
+| `PORT` | `3000` | Puerto del sistema |
+| `HOST` | `127.0.0.1` | Dónde escucha. Ver el punto 4 antes de cambiarlo |
+| `GYM_RESPALDOS` | `./respaldos` | Carpeta local de respaldos |
+| `GYM_RESPALDOS_NUBE` | (ninguna) | Carpeta sincronizada a la nube |
 
 ---
 
@@ -35,7 +49,7 @@ Esto no es opcional. Si recepción tiene que acordarse de abrir una terminal,
 el sistema va a estar apagado la mitad de los días.
 
 **Windows** — Programador de tareas: tarea nueva, disparador "Al iniciar el
-equipo", acción: ejecutar `node` con argumento `app\dist\server.js` y el
+equipo", acción: ejecutar `node` con argumento `dist/server/main.js` y el
 directorio de inicio en la carpeta `app`. Marcar "Ejecutar tanto si el usuario
 inició sesión como si no".
 
@@ -70,6 +84,11 @@ el celular del dueño, ambos con la misma cuenta. El celular queda en la misma
 red privada que la PC, y el dueño entra a `http://gimnasio-pc:3000/reportes`
 desde cualquier lado.
 
+Para eso el sistema tiene que arrancar con `HOST=0.0.0.0`. Por defecto escucha
+solo en `127.0.0.1` (la propia PC de recepción), porque **todavía no hay
+login**: abrirlo antes de tener el módulo de usuarios deja los datos al alcance
+de cualquiera conectado al wifi del gimnasio.
+
 Por qué Tailscale y no abrir un puerto en el router: no se expone nada a
 internet, no hace falta IP fija ni tocar el router, y no hay un login del
 sistema colgando de la web pública esperando que alguien lo pruebe.
@@ -88,8 +107,10 @@ Lo que protege contra "se quemó la PC". Configurar el día uno, no después.
 
 1. Instalar el cliente de escritorio de Google Drive (o OneDrive) en la PC y
    crear una carpeta sincronizada, por ejemplo `G:\Mi unidad\Respaldos Gimnasio`.
-2. Programar `npm run backup` dos veces al día (al mediodía y al cerrar), con
-   la misma herramienta del punto 2.
+2. Programar `pnpm backup` dos veces al día (al mediodía y al cerrar), con
+   la misma herramienta del punto 2, y con la variable `GYM_RESPALDOS_NUBE`
+   apuntando a esa carpeta. Si la copia a la nube no se puede hacer, el
+   comando termina con código 2 para que la tarea programada lo marque.
 3. El script hace `VACUUM INTO` (copia consistente sin parar el sistema),
    verifica que la copia se pueda abrir, la deja en la carpeta local y en la
    sincronizada, y conserva las últimas 14.

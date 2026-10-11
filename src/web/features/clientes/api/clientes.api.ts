@@ -12,7 +12,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, type MaybeRefOrGetter, toValue } from 'vue';
-import type { ClienteVista } from '@/modules/clientes';
+import type { z } from 'zod';
+import type { ClienteVista, clienteInputSchema } from '@/modules/clientes';
 import { api, pedir } from '@/web/shared/lib/api';
 
 export const clavesClientes = {
@@ -20,6 +21,9 @@ export const clavesClientes = {
   lista: (filtros: unknown) => ['clientes', 'lista', filtros] as const,
   uno: (id: number) => ['clientes', 'uno', id] as const,
 };
+
+/** Lo que envía el formulario: la salida del mismo esquema que valida la ruta. */
+export type DatosCliente = z.output<typeof clienteInputSchema>;
 
 export interface FiltrosLista {
   texto?: string;
@@ -62,7 +66,9 @@ export function useCliente(id: MaybeRefOrGetter<number>) {
   return useQuery({
     queryKey: computed(() => clavesClientes.uno(toValue(id))),
     queryFn: () =>
-      pedir<ClienteVista>(api.clientes[':id'].$get({ param: { id: String(toValue(id)) } })),
+      pedir<ClienteVista>(
+        api.clientes[':id'].$get({ param: { id: String(toValue(id)) } }),
+      ),
     enabled: computed(() => toValue(id) > 0),
   });
 }
@@ -71,15 +77,24 @@ export function useRegistrarCliente() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (datos: {
-      nombre: string;
-      apellido?: string | null;
-      ci?: string | null;
-      ciExtension?: string | null;
-      telefono?: string | null;
-    }) => pedir<ClienteVista>(api.clientes.$post({ json: datos })),
+    mutationFn: (datos: DatosCliente) =>
+      pedir<ClienteVista>(api.clientes.$post({ json: datos })),
 
     // Una sola invalidación: cualquier lista de clientes se recarga sola.
+    onSuccess: () => qc.invalidateQueries({ queryKey: clavesClientes.todo }),
+  });
+}
+
+export function useActualizarCliente() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, datos }: { id: number; datos: DatosCliente }) =>
+      pedir<ClienteVista>(
+        api.clientes[':id'].$put({ param: { id: String(id) }, json: datos }),
+      ),
+
+    // Invalida listas y fichas: el nombre editado aparece en las dos.
     onSuccess: () => qc.invalidateQueries({ queryKey: clavesClientes.todo }),
   });
 }

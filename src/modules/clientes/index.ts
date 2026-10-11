@@ -21,5 +21,5 @@ export function moduloClientes(db: DB) {
 
 export type { ClienteVista, ServicioClientes } from './application/clientes.service';
 export type { TipoCliente } from './domain/cliente';
-export { nombreCompleto, normalizarIdentificador } from './domain/cliente';
+export { EXTENSIONES, nombreCompleto, normalizarIdentificador } from './domain/cliente';
 export { clienteInputSchema, listarQuerySchema } from './http/schemas';

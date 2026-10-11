@@ -1,0 +1,332 @@
+<script setup lang="ts">
+/**
+ * Listado de clientes: búsqueda, filtro socio/eventual y paginación.
+ *
+ * Los filtros viven en la URL (`?texto=&tipo=&pagina=`): volver atrás desde
+ * una ficha deja la lista exactamente donde estaba, y un enlace se puede
+ * compartir. La pantalla no guarda nada del servidor: todo sale de vue-query.
+ */
+import { Plus, Search } from '@lucide/vue';
+import { refDebounced } from '@vueuse/core';
+import { computed, ref, watch } from 'vue';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
+import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
+import { formatearCi, formatearFecha, plural } from '@/web/shared/lib/formato';
+import { Button } from '@/web/shared/ui/button';
+import { Input } from '@/web/shared/ui/input';
+import { Label } from '@/web/shared/ui/label';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/web/shared/ui/pagination';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/web/shared/ui/select';
+import { Skeleton } from '@/web/shared/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/web/shared/ui/table';
+import { type FiltrosLista, useListaClientes } from '../api/clientes.api';
+import ClienteEtiquetas from '../components/ClienteEtiquetas.vue';
+
+const POR_PAGINA = 25;
+
+const route = useRoute();
+const router = useRouter();
+
+const deLaUrl = (valor: unknown) => (typeof valor === 'string' ? valor : '');
+
+const esTipo = (valor: unknown): valor is NonNullable<FiltrosLista['tipo']> =>
+  valor === 'socio' || valor === 'eventual';
+
+const filtros = computed(() => {
+  const tipo = deLaUrl(route.query.tipo);
+  const pagina = Number(deLaUrl(route.query.pagina));
+  return {
+    texto: deLaUrl(route.query.texto),
+    tipo: esTipo(tipo) ? tipo : undefined,
+    pagina: Number.isInteger(pagina) && pagina > 0 ? pagina : 1,
+    porPagina: POR_PAGINA,
+  };
+});
+
+const hayFiltros = computed(
+  () => filtros.value.texto !== '' || filtros.value.tipo !== undefined,
+);
+
+const { data, error, isPending, isFetching, isPlaceholderData, refetch } =
+  useListaClientes(filtros);
+
+function irA(
+  cambios: { texto?: string; tipo?: string; pagina?: number },
+  modo: 'push' | 'replace',
+) {
+  const nuevo = { ...filtros.value, ...cambios };
+  void router[modo]({
+    query: {
+      texto: nuevo.texto || undefined,
+      tipo: esTipo(nuevo.tipo) ? nuevo.tipo : undefined,
+      pagina: nuevo.pagina > 1 ? String(nuevo.pagina) : undefined,
+    },
+  });
+}
+
+// La caja de búsqueda responde en el acto; la consulta espera a que se deje
+// de teclear. Enter la dispara sin esperar.
+const textoBusqueda = ref(filtros.value.texto);
+const textoEstable = refDebounced(textoBusqueda, 200);
+
+function buscar(texto: string) {
+  if (texto.trim() !== filtros.value.texto)
+    irA({ texto: texto.trim(), pagina: 1 }, 'replace');
+}
+watch(textoEstable, buscar);
+
+// Si la URL cambia por fuera (botón atrás, "Quitar filtros"), la caja la sigue.
+watch(
+  () => filtros.value.texto,
+  (texto) => {
+    if (texto !== textoBusqueda.value.trim()) textoBusqueda.value = texto;
+  },
+);
+
+function quitarFiltros() {
+  textoBusqueda.value = '';
+  irA({ texto: '', tipo: undefined, pagina: 1 }, 'push');
+}
+
+// El esqueleto aparece solo si la carga tarda: contra localhost casi nunca, y
+// un parpadeo de 20ms es peor que nada.
+const tardando = refDebounced(isPending, 150);
+const mostrarEsqueleto = computed(() => isPending.value && tardando.value);
+
+const resumen = computed(() => {
+  if (!data.value) return '';
+  const { total, pagina, porPagina, clientes } = data.value;
+  if (total === 0) return 'Sin resultados';
+  const desde = (pagina - 1) * porPagina + 1;
+  return `${desde}–${desde + clientes.length - 1} de ${plural(total, 'cliente', 'clientes')}`;
+});
+
+const descripcionFiltros = computed(() => {
+  const partes: string[] = [];
+  if (filtros.value.texto) partes.push(`“${filtros.value.texto}”`);
+  if (filtros.value.tipo)
+    partes.push(filtros.value.tipo === 'socio' ? 'socios' : 'eventuales');
+  return partes.join(' en ');
+});
+</script>
+
+<template>
+  <div class="space-y-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">Clientes</h1>
+      <Button as-child>
+        <RouterLink :to="{ name: 'cliente-nuevo' }">
+          <Plus aria-hidden="true" />
+          Registrar cliente
+        </RouterLink>
+      </Button>
+    </div>
+
+    <form
+      role="search"
+      class="flex flex-wrap items-end gap-3"
+      @submit.prevent="buscar(textoBusqueda)"
+    >
+      <div class="w-full space-y-1.5 sm:w-80">
+        <Label for="buscar-cliente">Buscar</Label>
+        <div class="relative">
+          <Search
+            class="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
+            aria-hidden="true"
+          />
+          <Input
+            id="buscar-cliente"
+            v-model="textoBusqueda"
+            type="search"
+            class="pl-8"
+            placeholder="Nombre, CI o nº de socio"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <Label for="filtro-tipo">Tipo</Label>
+        <Select
+          :model-value="filtros.tipo ?? 'todos'"
+          @update:model-value="irA({ tipo: String($event), pagina: 1 }, 'push')"
+        >
+          <SelectTrigger id="filtro-tipo" class="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos</SelectItem>
+            <SelectItem value="socio">Socios</SelectItem>
+            <SelectItem value="eventual">Eventuales</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button v-if="hayFiltros" type="button" variant="ghost" @click="quitarFiltros">
+        Quitar filtros
+      </Button>
+    </form>
+
+    <ErrorDeCarga
+      v-if="error && !data"
+      titulo="No se pudo cargar la lista de clientes"
+      :mensaje="error.message"
+      :reintentando="isFetching"
+      @reintentar="refetch()"
+    />
+
+    <template v-else>
+      <!-- Al refrescar o cambiar de página se sigue viendo lo anterior, atenuado. -->
+      <div
+        class="min-h-96 rounded-lg border transition-opacity duration-150"
+        :class="{ 'opacity-60': isPlaceholderData }"
+        :aria-busy="isFetching"
+      >
+        <Table class="table-fixed">
+          <TableHeader class="bg-background sticky top-0">
+            <TableRow>
+              <TableHead class="w-24 text-right">Nº socio</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead class="w-36">CI</TableHead>
+              <TableHead class="hidden w-32 lg:table-cell">Teléfono</TableHead>
+              <TableHead class="w-44">Tipo</TableHead>
+              <TableHead class="hidden w-32 md:table-cell">Registro</TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody v-if="mostrarEsqueleto" aria-hidden="true">
+            <TableRow v-for="n in 10" :key="n" class="h-11">
+              <TableCell><Skeleton class="ml-auto h-4 w-8" /></TableCell>
+              <TableCell><Skeleton class="h-4 w-40" /></TableCell>
+              <TableCell><Skeleton class="h-4 w-24" /></TableCell>
+              <TableCell class="hidden lg:table-cell"
+                ><Skeleton class="h-4 w-20"
+              /></TableCell>
+              <TableCell><Skeleton class="h-5 w-16 rounded-full" /></TableCell>
+              <TableCell class="hidden md:table-cell"
+                ><Skeleton class="h-4 w-20"
+              /></TableCell>
+            </TableRow>
+          </TableBody>
+
+          <TableBody v-else-if="data && data.clientes.length > 0">
+            <TableRow
+              v-for="cliente in data.clientes"
+              :key="cliente.id"
+              class="h-11 cursor-pointer"
+              @click="router.push({ name: 'cliente-ficha', params: { id: cliente.id } })"
+            >
+              <TableCell class="text-right tabular-nums">{{
+                cliente.nroSocio
+              }}</TableCell>
+              <TableCell class="truncate font-medium">
+                <RouterLink
+                  :to="{ name: 'cliente-ficha', params: { id: cliente.id } }"
+                  class="focus-visible:ring-ring/50 rounded-sm outline-none hover:underline focus-visible:ring-3"
+                  @click.stop
+                >
+                  {{ cliente.nombreCompleto }}
+                </RouterLink>
+              </TableCell>
+              <TableCell class="tabular-nums">
+                {{ formatearCi(cliente.ci, cliente.ciExtension) }}
+              </TableCell>
+              <TableCell class="hidden tabular-nums lg:table-cell">
+                {{ cliente.telefono ?? '—' }}
+              </TableCell>
+              <TableCell><ClienteEtiquetas :cliente="cliente" /></TableCell>
+              <TableCell class="hidden tabular-nums md:table-cell">
+                {{ formatearFecha(cliente.fechaRegistro) }}
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+
+        <!-- Vacío por filtros: decir cuál y ofrecer la salida. -->
+        <div
+          v-if="data && data.clientes.length === 0 && hayFiltros"
+          class="flex flex-col items-center gap-3 px-4 py-16 text-center"
+        >
+          <p class="text-sm font-medium">
+            Ningún cliente coincide con {{ descripcionFiltros }}
+          </p>
+          <p class="text-muted-foreground max-w-prose text-sm">
+            Probá con otro nombre, el CI sin puntos o el número de socio.
+          </p>
+          <Button variant="outline" size="sm" @click="quitarFiltros"
+            >Quitar filtros</Button
+          >
+        </div>
+
+        <!-- Vacío de primera vez: explicar qué va acá y cómo empezar. -->
+        <div
+          v-else-if="data && data.clientes.length === 0"
+          class="flex flex-col items-center gap-3 px-4 py-16 text-center"
+        >
+          <p class="text-sm font-medium">Todavía no hay clientes</p>
+          <p class="text-muted-foreground max-w-prose text-sm">
+            Acá aparecen los socios y quienes compran un pase por sesión. Para un pase
+            alcanza con el nombre.
+          </p>
+          <Button as-child size="sm">
+            <RouterLink :to="{ name: 'cliente-nuevo' }">Registrar cliente</RouterLink>
+          </Button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="text-muted-foreground text-sm tabular-nums" role="status">
+          {{ resumen }}
+        </p>
+
+        <Pagination
+          v-if="data && data.paginas > 1"
+          v-slot="{ page }"
+          class="mx-0 w-auto"
+          :total="data.total"
+          :items-per-page="data.porPagina"
+          :page="filtros.pagina"
+          :sibling-count="1"
+          show-edges
+          @update:page="irA({ pagina: $event }, 'push')"
+        >
+          <PaginationContent v-slot="{ items }">
+            <PaginationPrevious>Anterior</PaginationPrevious>
+            <template v-for="(item, indice) in items" :key="indice">
+              <PaginationItem
+                v-if="item.type === 'page'"
+                :value="item.value"
+                :is-active="item.value === page"
+                :aria-label="`Página ${item.value}`"
+              >
+                {{ item.value }}
+              </PaginationItem>
+              <PaginationEllipsis v-else :index="indice" />
+            </template>
+            <PaginationNext>Siguiente</PaginationNext>
+          </PaginationContent>
+        </Pagination>
+      </div>
+    </template>
+  </div>
+</template>

@@ -9,7 +9,7 @@
  * entidad espejo ni mapper: esa fue la decisión de "clean pragmática".
  */
 
-import { and, count, desc, eq, isNull, like, max, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, like, max, or, sql } from 'drizzle-orm';
 import type { DB } from '@/lib/db';
 import { clientes, membresias, planes } from '@/lib/db/schema';
 import type { ClienteNormalizado } from '../domain/cliente';

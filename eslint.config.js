@@ -19,6 +19,34 @@ export default ts.config(
     },
   },
 
+  // Los <script setup lang="ts"> de Vue se parsean con el parser de TypeScript.
+  // El formato del template es cosa de Prettier, no del linter.
+  {
+    files: ['**/*.vue'],
+    languageOptions: { parserOptions: { parser: ts.parser } },
+    rules: {
+      // TypeScript ya detecta identificadores inexistentes (vue-tsc), y lo hace
+      // conociendo los globales del navegador.
+      'no-undef': 'off',
+      'vue/max-attributes-per-line': 'off',
+      'vue/singleline-html-element-content-newline': 'off',
+      'vue/multiline-html-element-content-newline': 'off',
+      'vue/html-self-closing': 'off',
+      'vue/html-indent': 'off',
+      'vue/html-closing-bracket-newline': 'off',
+    },
+  },
+
+  // Componentes de shadcn-vue: se copian tal cual vienen (Button.vue,
+  // Input.vue…) y no siguen nuestras convenciones de nombres ni de props.
+  {
+    files: ['src/web/shared/ui/**'],
+    rules: {
+      'vue/multi-word-component-names': 'off',
+      'vue/require-default-prop': 'off',
+    },
+  },
+
   /**
    * LÍMITES ENTRE MÓDULOS.
    *
@@ -35,7 +63,12 @@ export default ts.config(
         {
           patterns: [
             {
-              group: ['@/modules/*/domain/*', '@/modules/*/application/*', '@/modules/*/infrastructure/*', '@/modules/*/http/*'],
+              group: [
+                '@/modules/*/domain/*',
+                '@/modules/*/application/*',
+                '@/modules/*/infrastructure/*',
+                '@/modules/*/http/*',
+              ],
               message:
                 'Importá el módulo por su index.ts (@/modules/clientes), nunca sus internals.',
             },
@@ -60,7 +93,14 @@ export default ts.config(
         {
           patterns: [
             {
-              group: ['hono', 'hono/*', 'drizzle-orm', 'drizzle-orm/*', '@/lib/db', '@/lib/db/*'],
+              group: [
+                'hono',
+                'hono/*',
+                'drizzle-orm',
+                'drizzle-orm/*',
+                '@/lib/db',
+                '@/lib/db/*',
+              ],
               message:
                 'La capa domain es pura: sin base de datos ni HTTP. Eso va en infrastructure o http.',
             },

@@ -11,7 +11,6 @@
       "Bash(git diff:*)",
       "Bash(git log:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)",
       "Read(**)",
       "Edit(src/**)",
       "Write(src/**)",
@@ -22,6 +21,7 @@
       "Bash(pnpm db:migrate:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm remove:*)",
+      "Bash(git commit:*)",
       "Bash(git push:*)",
       "Edit(drizzle/**)",
       "Edit(.env*)"

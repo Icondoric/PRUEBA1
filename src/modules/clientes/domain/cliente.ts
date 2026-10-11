@@ -49,7 +49,10 @@ export interface ClienteNormalizado {
   telefono: string | null;
 }
 
-const EXTENSIONES = ['LP', 'CB', 'SC', 'OR', 'PT', 'TJ', 'CH', 'BE', 'PD'];
+/** Extensiones de CI válidas. El formulario arma su desplegable con esta lista. */
+export const EXTENSIONES: readonly string[] = [
+  'LP', 'CB', 'SC', 'OR', 'PT', 'TJ', 'CH', 'BE', 'PD',
+]; // prettier-ignore
 
 /**
  * Valida y normaliza los datos de alta.
