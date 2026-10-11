@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Users } from '@lucide/vue';
+import { ScanLine, Users } from '@lucide/vue';
 import { nextTick, watch } from 'vue';
 import { RouterLink, RouterView, useRoute } from 'vue-router';
 
@@ -18,7 +18,10 @@ watch(
 );
 
 // Solo las secciones que existen. Las que faltan se agregan cuando se construyan.
-const secciones = [{ a: '/clientes', etiqueta: 'Clientes', icono: Users }];
+const secciones = [
+  { a: '/clientes', etiqueta: 'Clientes', icono: Users },
+  { a: '/checkin', etiqueta: 'Check-in', icono: ScanLine },
+];
 </script>
 
 <template>

@@ -3,6 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 declare module 'vue-router' {
   interface RouteMeta {
     titulo: string;
+    /** Pantalla completa, sin la barra lateral (el check-in). */
+    kiosco?: boolean;
   }
 }
 
@@ -39,6 +41,12 @@ export const router = createRouter({
       name: 'membresia-nueva',
       component: () => import('@/web/features/membresias/views/MembresiaVentaView.vue'),
       meta: { titulo: 'Vender membresía' },
+    },
+    {
+      path: '/checkin',
+      name: 'checkin',
+      component: () => import('@/web/features/checkin/views/CheckinView.vue'),
+      meta: { titulo: 'Check-in', kiosco: true },
     },
     {
       path: '/:resto(.*)*',

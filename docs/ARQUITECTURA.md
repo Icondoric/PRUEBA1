@@ -134,5 +134,5 @@ La base de los tests se crea con **las migraciones reales**, no con un
 `CREATE TABLE` escrito a mano. Si una migración rompe algo, los tests se
 enteran; si no, estarías validando una base paralela que se le parece.
 
-Hoy: **110 tests**. Ese número es el contrato que el agente no puede romper sin
+Hoy: **138 tests**. Ese número es el contrato que el agente no puede romper sin
 que se note.
