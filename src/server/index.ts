@@ -13,18 +13,28 @@ import type { DB } from '@/lib/db';
 import { moduloCheckin } from '@/modules/checkin';
 import { moduloClientes } from '@/modules/clientes';
 import { moduloMembresias } from '@/modules/membresias';
+import { moduloPagos } from '@/modules/pagos';
 import { moduloUsuarios } from '@/modules/usuarios';
+import { moduloVisitas } from '@/modules/visitas';
 import { manejadorDeErrores } from './middleware/errores';
 
 export function crearApp(db: DB) {
   const clientes = moduloClientes(db);
-  const checkin = moduloCheckin(db, { clientes: clientes.servicio });
   const usuarios = moduloUsuarios(db);
+  // Provisorio hasta que haya login: ver modules/usuarios.
+  const operadorActual = () => usuarios.servicio.operadorActual().id;
+
   const membresias = moduloMembresias(db, {
     clientes: clientes.servicio,
-    // Provisorio hasta que haya login: ver modules/usuarios.
-    operadorActual: () => usuarios.servicio.operadorActual().id,
+    operadorActual,
   });
+  const checkin = moduloCheckin(db, {
+    clientes: clientes.servicio,
+    membresias: membresias.servicio,
+    operadorActual,
+  });
+  const pagos = moduloPagos(db, { clientes: clientes.servicio });
+  const visitas = moduloVisitas(db, { clientes: clientes.servicio, operadorActual });
 
   const app = new Hono()
     .use('*', logger())
@@ -38,7 +48,9 @@ export function crearApp(db: DB) {
     .route('/api/clientes', clientes.rutas)
     .route('/api/planes', membresias.rutasPlanes)
     .route('/api/membresias', membresias.rutas)
-    .route('/api/checkin', checkin.rutas);
+    .route('/api/checkin', checkin.rutas)
+    .route('/api/pagos', pagos.rutas)
+    .route('/api/visitas', visitas.rutas);
 
   return app;
 }

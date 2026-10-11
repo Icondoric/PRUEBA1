@@ -134,6 +134,20 @@ aplica **selectivamente**, como ella misma indica:
   "socio", "eventual", "membresía", "pago". Un concepto, una palabra.
 - Antes de dar una pantalla por terminada, pasá el "Review checklist" del
   final de la skill.
+- **El aspecto visual se hace al final**, cuando estén todas las pantallas:
+  ver `docs/PASADA-VISUAL.md`. Hasta entonces no rediseñes nada; usá los
+  componentes y tokens como están. **Cada vez que crees una pantalla o un
+  componente nuevo, anotalo en ese archivo** con lo que habrá que ajustarle.
+
+## Documentación para la guía de usuario
+
+`docs/SISTEMA.md` describe lo que el sistema hace desde el punto de vista de
+recepción y del dueño. Es la base de la futura guía de usuario.
+
+**Al terminar cada rebanada, actualizalo en la misma sesión**: las pantallas
+nuevas, cómo se usan, los mensajes que puede ver recepción, y tachá lo que
+dejó de estar pendiente. Solo lo que ya funciona y fue probado, en lenguaje de
+usuario (nada de nombres de archivos, rutas de API ni términos de código).
 
 ## Pendiente de confirmar con el dueño
 

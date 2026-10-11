@@ -8,6 +8,7 @@ import { refDebounced } from '@vueuse/core';
 import { computed } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import MembresiasDelCliente from '@/web/features/membresias/components/MembresiasDelCliente.vue';
+import PagosDelCliente from '@/web/features/pagos/components/PagosDelCliente.vue';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
 import { formatearCi, formatearFecha } from '@/web/shared/lib/formato';
@@ -149,6 +150,8 @@ const confirmacion = computed(() => {
       </dl>
 
       <MembresiasDelCliente :cliente-id="cliente.id" />
+
+      <PagosDelCliente :cliente-id="cliente.id" />
     </template>
 
     <template v-else>

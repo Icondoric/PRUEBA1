@@ -8,8 +8,10 @@
  */
 
 import { z } from 'zod';
+import { METODOS } from '@/modules/pagos';
 
-export const METODOS_PAGO = ['efectivo', 'qr', 'transferencia', 'tarjeta'] as const;
+/** Los métodos de pago los define el módulo de pagos; acá solo se reusan. */
+export const METODOS_PAGO = METODOS;
 
 const id = (queEs: string) =>
   z.coerce

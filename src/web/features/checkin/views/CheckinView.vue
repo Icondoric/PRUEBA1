@@ -7,6 +7,7 @@
  *     texto además del color.
  *   - Se limpia sola a los 3 segundos. No hay que esperar: el siguiente puede
  *     teclear mientras todavía se ve el resultado anterior.
+ *   - F2 abre la venta de un pase por sesión, también sin mouse.
  *   - Sin animaciones: acá mandan tamaño, contraste y velocidad.
  *
  * Quién entra lo decide el servidor (`evaluarAcceso`). Esta pantalla solo
@@ -17,7 +18,12 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { ErrorDeApi } from '@/web/shared/lib/api';
 import { formatearFecha } from '@/web/shared/lib/formato';
-import { type ResultadoCheckin, useRegistrarIngreso } from '../api/checkin.api';
+import {
+  type PaseVendido,
+  type ResultadoCheckin,
+  useRegistrarIngreso,
+} from '../api/checkin.api';
+import PaseRapido from '../components/PaseRapido.vue';
 import { sonar } from '../lib/sonido';
 
 const SEGUNDOS_EN_PANTALLA = 3;
@@ -27,11 +33,16 @@ type Pantalla =
   | { tipo: 'resultado'; resultado: ResultadoCheckin }
   | { tipo: 'falla'; mensaje: string };
 
+type ClienteDelPase = { clienteId: number; nombreCompleto: string; nroSocio: number };
+
 const registrar = useRegistrarIngreso();
 
 const campo = ref<HTMLInputElement | null>(null);
 const texto = ref('');
 const pantalla = ref<Pantalla>({ tipo: 'espera' });
+
+/** null = cerrado. Abierto, lleva a quién se le vende (o nadie: se escribe). */
+const ventaDePase = ref<{ cliente: ClienteDelPase | null } | null>(null);
 
 let temporizador: ReturnType<typeof setTimeout> | undefined;
 let turno = 0;
@@ -74,18 +85,58 @@ async function enviar() {
 }
 
 // Foco permanente: si se pierde (un clic en cualquier lado), vuelve solo.
+// Mientras está abierta la venta del pase, el foco es de ese panel.
 function enfocar() {
+  if (ventaDePase.value) return;
   requestAnimationFrame(() => campo.value?.focus());
+}
+
+/** A quién se le puede ofrecer un pase: al que acaba de rebotar y no está bloqueado. */
+const rebotado = computed<ClienteDelPase | null>(() => {
+  const p = pantalla.value;
+  if (p.tipo !== 'resultado' || !p.resultado.encontrado) return null;
+  const r = p.resultado;
+  return r.permitir || r.bloqueado ? null : r.socio;
+});
+
+function abrirVentaDePase() {
+  if (ventaDePase.value) return;
+  ventaDePase.value = { cliente: rebotado.value };
+  // El resultado anterior no se queda corriendo detrás del panel.
+  clearTimeout(temporizador);
+  pantalla.value = { tipo: 'espera' };
+  turno++;
+}
+
+function paseVendido(resultado: PaseVendido) {
+  ventaDePase.value = null;
+  mostrar({ tipo: 'resultado', resultado });
+  sonar(resultado.permitir ? 'permitido' : 'rechazado');
+  enfocar();
+}
+
+function cerrarVentaDePase() {
+  ventaDePase.value = null;
+  enfocar();
+}
+
+function atajos(evento: KeyboardEvent) {
+  if (evento.key === 'F2') {
+    evento.preventDefault();
+    abrirVentaDePase();
+  }
 }
 
 onMounted(() => {
   enfocar();
   window.addEventListener('focus', enfocar);
+  window.addEventListener('keydown', atajos);
 });
 
 onBeforeUnmount(() => {
   clearTimeout(temporizador);
   window.removeEventListener('focus', enfocar);
+  window.removeEventListener('keydown', atajos);
 });
 
 type Tono = 'neutro' | 'ok' | 'aviso' | 'rechazo';
@@ -209,12 +260,18 @@ const FONDO: Record<Tono, string> = {
 
         <p class="max-w-4xl text-4xl font-medium text-balance">{{ vista.mensaje }}</p>
         <p v-if="vista.detalle" class="text-2xl">{{ vista.detalle }}</p>
+        <p v-if="rebotado" class="text-2xl">F2 para venderle un pase por sesión</p>
       </template>
 
       <p v-else class="text-muted-foreground max-w-2xl text-3xl text-balance">
         Tecleá tu número de socio o tu CI y presioná Enter
       </p>
     </div>
+
+    <p class="absolute bottom-4 left-4 text-sm opacity-70">
+      <kbd class="rounded border border-current px-1.5 py-0.5 font-sans">F2</kbd>
+      Vender pase por sesión
+    </p>
 
     <!-- Solo con mouse y fuera del orden de tabulación: el teclado es del check-in. -->
     <RouterLink
@@ -224,5 +281,12 @@ const FONDO: Record<Tono, string> = {
     >
       Salir del check-in
     </RouterLink>
+
+    <PaseRapido
+      v-if="ventaDePase"
+      :cliente="ventaDePase.cliente"
+      @vendido="paseVendido"
+      @cerrar="cerrarVentaDePase"
+    />
   </main>
 </template>

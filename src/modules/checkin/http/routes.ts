@@ -1,18 +1,33 @@
 /**
- * CAPA HTTP — la ruta del check-in.
+ * CAPA HTTP — las rutas del mostrador.
  *
- * Responde siempre 200 cuando pudo decidir, también si rechaza o si el número
- * no es de nadie: un rebote es un resultado del negocio, no un error.
+ * El check-in responde siempre 200 cuando pudo decidir, también si rechaza o
+ * si el número no es de nadie: un rebote es un resultado del negocio, no un
+ * error.
  */
 
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { hoyEnZona } from '@/lib/fechas';
 import type { ServicioCheckin } from '../application/checkin.service';
-import { checkinInputSchema } from './schemas';
+import { checkinInputSchema, paseInputSchema } from './schemas';
 
-export function rutasCheckin(servicio: ServicioCheckin) {
-  return new Hono().post('/', zValidator('json', checkinInputSchema), (c) =>
-    c.json(servicio.registrar(c.req.valid('json').identificador, hoyEnZona())),
-  );
+/**
+ * @param operadorActual id del usuario que está operando (provisorio hasta
+ *   que haya login). Queda como quien registró la venta del pase.
+ */
+export function rutasCheckin(servicio: ServicioCheckin, operadorActual: () => number) {
+  return new Hono()
+    .post('/', zValidator('json', checkinInputSchema), (c) =>
+      c.json(servicio.registrar(c.req.valid('json').identificador, hoyEnZona())),
+    )
+
+    .get('/pase', (c) => c.json({ pase: servicio.pasePorSesion(hoyEnZona()) }))
+
+    .post('/pase', zValidator('json', paseInputSchema), (c) =>
+      c.json(
+        servicio.venderPase(c.req.valid('json'), hoyEnZona(), operadorActual()),
+        201,
+      ),
+    );
 }

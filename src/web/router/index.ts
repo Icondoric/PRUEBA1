@@ -43,6 +43,18 @@ export const router = createRouter({
       meta: { titulo: 'Vender membresía' },
     },
     {
+      path: '/pagos',
+      name: 'pagos',
+      component: () => import('@/web/features/pagos/views/PagosView.vue'),
+      meta: { titulo: 'Pagos' },
+    },
+    {
+      path: '/visitas',
+      name: 'visitas',
+      component: () => import('@/web/features/visitas/views/VisitasView.vue'),
+      meta: { titulo: 'Visitas' },
+    },
+    {
       path: '/checkin',
       name: 'checkin',
       component: () => import('@/web/features/checkin/views/CheckinView.vue'),
