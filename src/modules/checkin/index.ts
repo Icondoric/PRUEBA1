@@ -4,6 +4,7 @@
  * Los demás módulos importan SOLO desde acá: `@/modules/checkin`.
  */
 
+import type { Context } from 'hono';
 import type { DB } from '@/lib/db';
 import type { ServicioClientes } from '@/modules/clientes';
 import type { ServicioMembresias } from '@/modules/membresias';
@@ -17,7 +18,7 @@ export function moduloCheckin(
     clientes: Pick<ServicioClientes, 'buscarPorIdentificador' | 'obtener' | 'registrar'>;
     membresias: Pick<ServicioMembresias, 'planesConPrecio' | 'vender'>;
     /** id del usuario que opera; queda como quien registró la venta del pase. */
-    operadorActual: () => number;
+    operadorActual: (c: Context) => number;
   },
 ) {
   const servicio = crearServicioCheckin(crearRepoCheckin(db), deps);

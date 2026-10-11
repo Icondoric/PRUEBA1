@@ -3,6 +3,7 @@
  */
 
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { hoyEnZona } from '@/lib/fechas';
 import type { ServicioPagos } from '../application/pagos.service';
@@ -13,10 +14,21 @@ import {
   pagosDeClienteQuerySchema,
 } from './schemas';
 
-export function rutasPagos(servicio: ServicioPagos) {
+export interface DepsDePagos {
+  /** El id de quien inició sesión; queda como quien anuló. */
+  operadorActual: (c: Context) => number;
+  /** ¿Quien pide tiene acceso a ver la caja de otras fechas? */
+  puedeVerOtrasFechas: (c: Context) => boolean;
+  /** La hora real, para registrar cuándo se anuló. */
+  ahora: () => Date;
+}
+
+export function rutasPagos(servicio: ServicioPagos, deps: DepsDePagos) {
   return new Hono()
     .get('/', zValidator('query', listarPagosQuerySchema), (c) =>
-      c.json(servicio.listar(c.req.valid('query'), hoyEnZona())),
+      c.json(
+        servicio.listar(c.req.valid('query'), hoyEnZona(), deps.puedeVerOtrasFechas(c)),
+      ),
     )
 
     .get('/de-cliente', zValidator('query', pagosDeClienteQuerySchema), (c) =>
@@ -27,6 +39,14 @@ export function rutasPagos(servicio: ServicioPagos) {
       '/:id/anulacion',
       zValidator('param', idParamSchema),
       zValidator('json', anulacionInputSchema),
-      (c) => c.json(servicio.anular(c.req.valid('param').id, c.req.valid('json').motivo)),
+      (c) =>
+        c.json(
+          servicio.anular(
+            c.req.valid('param').id,
+            c.req.valid('json').motivo,
+            deps.operadorActual(c),
+            deps.ahora(),
+          ),
+        ),
     );
 }

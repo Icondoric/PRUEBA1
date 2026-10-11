@@ -43,3 +43,31 @@ export function formatearBs(
     resto > 0 || opciones.conCentavos ? `,${String(resto).padStart(2, '0')}` : '';
   return `${centavos < 0 ? '−' : ''}Bs ${enteros}${decimales}`;
 }
+
+const MESES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+
+/** 'YYYY-MM' → 'octubre 2026'. */
+export function formatearMes(mes: string): string {
+  const [anio, numero] = mes.split('-');
+  const nombre = MESES[Number(numero) - 1];
+  return nombre && anio ? `${nombre} ${anio}` : mes;
+}
+
+/** 'YYYY-MM-DD' → 'DD/MM', para ejes y listas donde el año sobra. */
+export function formatearDiaMes(fecha: string): string {
+  const [, mes, dia] = fecha.split('-');
+  return mes && dia ? `${dia}/${mes}` : fecha;
+}

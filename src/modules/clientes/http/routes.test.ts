@@ -10,17 +10,16 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { crearApp } from '@/server';
 import { membresias, planes } from '@/lib/db/schema';
-import { dbDePrueba, sembrarPlanes } from '@/test/db';
+import { appConSesion, dbDePrueba, sembrarPlanes } from '@/test/db';
 import type { DB } from '@/lib/db';
 
 let db: DB;
-let app: ReturnType<typeof crearApp>;
+let app: ReturnType<typeof appConSesion>;
 
 beforeEach(() => {
   db = dbDePrueba();
-  app = crearApp(db);
+  app = appConSesion(db);
 });
 
 const crear = (body: Record<string, unknown>) =>

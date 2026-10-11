@@ -9,7 +9,7 @@ Describe lo que el sistema hace desde el punto de vista de quien lo usa
 sesión. Solo se documenta lo que ya funciona y fue probado; lo que falta va en
 la última sección. Si una pantalla cambia, se corrige acá.
 
-**Última actualización:** rebanada 4 (pase desde el check-in, pagos, visitas).
+**Última actualización:** rebanada 6 (usuarios, contraseñas y accesos).
 
 ---
 
@@ -37,8 +37,21 @@ Con el sistema encendido, en el navegador de la PC de recepción:
 | `http://localhost:3000` | El sistema (abre en Clientes) |
 | `http://localhost:3000/checkin` | La pantalla de ingreso |
 
-Hoy **no hay usuario ni contraseña**. Por eso el sistema solo se puede abrir
-desde la propia PC de recepción.
+### Ingresar
+
+Lo primero que aparece es la pantalla de ingreso: **usuario y contraseña**.
+Cada persona tiene su propio usuario; no se comparten.
+
+- El usuario no distingue mayúsculas de minúsculas.
+- Tras 5 intentos fallidos seguidos hay que esperar un minuto.
+- **La sesión se cierra sola después de 8 horas sin uso.** Al volver, pide la
+  contraseña y deja a la persona donde estaba.
+- **Cerrar sesión:** abajo en el menú, donde también se ve quién está usando
+  el sistema. Hay que cerrarla al terminar el turno.
+- Quien olvida su contraseña se la pide al dueño, que le pone una nueva desde
+  "Usuarios".
+
+En el menú aparecen solo las secciones a las que cada uno tiene acceso.
 
 ## 3. Palabras que usa el sistema
 
@@ -254,7 +267,102 @@ Debajo se ven las visitas de los últimos 30 días.
 Una visita no crea un cliente, no tiene número de socio y no pasa por el
 check-in.
 
-## 9. Respaldo de los datos
+## 9. Reportes (solo para el dueño)
+
+Menú **Reportes**. Está pensado para leerse desde el celular: una sola
+columna y números grandes.
+
+**Es una pantalla del dueño.** Recepción no la ve, salvo que el dueño le dé el
+acceso "Ver los reportes" a alguien.
+
+| Sección | Qué muestra | Para qué sirve |
+|---|---|---|
+| **Hoy** | Socios activos, cobrado, cuántos entraron y cuántos rebotaron. | El pulso del día. |
+| **Vencen en los próximos 7 días** | Quiénes, con plan, teléfono y fecha. | Llamarlos antes de que venzan. |
+| **Vencidos en los últimos 60 días** | Quiénes y hace cuánto. Aparte, cuántos vencieron hace más tiempo. | Recuperar a los que se fueron hace poco. |
+| **Cobrado por mes** | Los últimos 6 meses, con el desglose por método. | Ver cómo viene el negocio. |
+| **Ingresos por día** | Del mes que se elija: cuántos entraron y cuántos rebotaron cada día. | Ver los días flojos y los fuertes. |
+| **Asistencia por día de la semana** | Promedio de personas que entran cada día, en las últimas 8 semanas. | Saber qué días se llena. |
+| **Socios nuevos** | Cuántos compraron su primer plan cada mes. | Medir el crecimiento. |
+| **Pases por sesión vendidos** | Cuántos por mes, y quiénes vinieron más de 3 veces en 90 días. | Ofrecerles un plan a los que vienen seguido. |
+
+Cómo se cuentan las cosas:
+
+- **Socio activo** es quien tiene un plan vigente hoy. **Los pases por sesión
+  nunca cuentan** como socios activos ni como socios nuevos.
+- Los pagos anulados y las membresías canceladas no suman en nada.
+- Quien ya renovó por adelantado no aparece como "por vencer".
+- Un vencido que ya pagó la membresía que viene no aparece para llamar.
+- Los clientes dados de baja no aparecen.
+
+**Exportar a CSV:** cada lista tiene su botón. El archivo se abre en Excel con
+doble clic, con los montos listos para sumar.
+
+## 10. Usuarios y accesos (solo para el dueño)
+
+Menú **Usuarios**. Solo lo ve el dueño, y eso no se puede delegar.
+
+### 10.1 Quién puede qué
+
+**El dueño puede todo, siempre.** A los demás, el dueño les da accesos sueltos,
+con casillas agrupadas por módulo:
+
+| Módulo | Acceso | Viene con recepción |
+|---|---|---|
+| Clientes | Ver, registrar y editar clientes | Sí |
+| | Bloquear y desbloquear clientes | No |
+| | Dar de baja clientes | No |
+| Membresías | Vender y renovar membresías | Sí |
+| Check-in | Usar la pantalla de check-in | Sí |
+| | Vender pases por sesión | Sí |
+| Pagos | Ver lo cobrado hoy | Sí |
+| | Ver lo cobrado en otras fechas | No |
+| | Anular pagos | No |
+| Visitas | Registrar y ver visitas gratis | Sí |
+| Reportes | Ver los reportes | No |
+| Planes y precios | Crear y cambiar planes, precios y promociones | No |
+
+Lo que cada uno no tiene, no lo ve: ni la sección en el menú ni el botón. Por
+ejemplo, quien no puede anular pagos no ve "Anular pago", y quien solo puede
+ver lo cobrado hoy no tiene los filtros de fecha en Pagos.
+
+Los accesos de "Bloquear", "Dar de baja" y "Planes y precios" ya se pueden dar,
+pero las pantallas para hacer esas tres cosas todavía no existen.
+
+### 10.2 Crear un usuario
+
+Botón **Crear usuario**: nombre y apellido, usuario (sin espacios, por ejemplo
+`ana.quispe`) y una contraseña de 8 caracteres o más.
+
+Las casillas vienen con lo básico de recepción ya marcado. Se agrega o se
+quita lo que haga falta. **Dejar lo básico de recepción** vuelve al punto de
+partida.
+
+### 10.3 Cambiar a un usuario que ya existe
+
+Se entra haciendo clic en su fila. Cada cosa tiene su propio botón:
+
+- **Guardar cambios:** el nombre y los accesos. Se aplican en el acto, sin
+  que la persona tenga que salir y volver a entrar.
+- **Cambiar contraseña:** le pone una nueva y le cierra las sesiones que
+  tenga abiertas.
+- **Desactivar usuario:** deja de poder entrar en ese mismo momento. No se
+  borra: lo que registró sigue a su nombre. Se puede reactivar.
+
+### 10.4 Lo que queda registrado
+
+- Cada venta, pago y visita guarda **quién la cargó**.
+- Al anular un pago queda **quién lo anuló** y cuándo; se ve en la tabla.
+- Cada acceso guarda quién lo dio.
+
+### 10.5 La cuenta del dueño
+
+No se crea desde el navegador sino con un comando en la PC de recepción (ver
+`docs/INSTALACION.md`). El mismo comando sirve si el dueño olvida su
+contraseña. Desde la pantalla, la cuenta del dueño no se puede desactivar ni
+recortar.
+
+## 11. Respaldo de los datos
 
 Toda la información está en un solo archivo. El respaldo hace una copia segura
 sin apagar el sistema, la guarda en la PC y, si está configurada, en una
@@ -266,7 +374,7 @@ configuración están en `docs/INSTALACION.md`.
 **Nunca copiar el archivo de datos a mano con el sistema encendido:** la copia
 puede salir dañada.
 
-## 10. Mensajes que puede ver recepción
+## 12. Mensajes que puede ver recepción
 
 | Mensaje | Qué hacer |
 |---|---|
@@ -284,21 +392,31 @@ puede salir dañada.
 | Ese pago ya estaba anulado | No hay nada que hacer: ya está anulado. |
 | Indicá a qué socio acompaña | Para un acompañante hay que poner quién lo trae. |
 | “…” no es un número de socio ni un CI registrado | Revisar el número de quien invita. |
+| Usuario o contraseña incorrectos | Revisar las dos cosas. El mensaje es el mismo si el usuario no existe o está desactivado. |
+| Demasiados intentos seguidos. Esperá … segundos | Esperar y volver a probar con calma. |
+| Tu sesión se cerró por inactividad | Volver a ingresar. |
+| No tenés acceso a esta parte | Pedirle al dueño que habilite ese acceso. |
+| Tu usuario solo puede ver lo cobrado hoy | Para otras fechas hace falta un acceso que da el dueño. |
+| Ya existe un usuario "…" | Elegir otro nombre de usuario. |
 | No se pudo cargar … / Reintentar | Probar con el botón. Si sigue, revisar que el sistema esté encendido. |
 | Algo falló en el sistema. Avisale al administrador. | Un error inesperado. Anotar qué se estaba haciendo y avisar. |
 
-## 11. Lo que todavía no existe
+## 13. Lo que todavía no existe
 
 Se va tachando a medida que se construye.
 
 - [x] Vender un pase por sesión directamente desde el check-in
 - [x] Pagos: historial y anulación con motivo
 - [x] Visitas gratis (cortesías, clases de prueba, acompañantes)
-- [ ] Registrar quién anuló un pago y cuándo (hoy solo queda el motivo)
+- [x] Registrar quién anuló un pago y cuándo
 - [ ] Enlazar una clase de prueba con el cliente, si después se inscribe
 - [ ] Ver visitas de más de 30 días atrás
-- [ ] Reportes para el dueño, desde el celular
-- [ ] Usuarios y contraseñas
+- [x] Reportes para el dueño
+- [x] Que recepción no vea los reportes
+- [x] Usuarios, contraseñas y accesos por módulo
+- [ ] Probar el acceso desde el celular del dueño por Tailscale (ya se puede
+      configurar; ver `docs/INSTALACION.md`)
+- [ ] Que cada uno pueda cambiar su propia contraseña (hoy la cambia el dueño)
 - [ ] Resumen diario al dueño
 - [ ] Cargar y cambiar planes, precios y promociones desde la pantalla
 - [ ] Bloquear y desbloquear un cliente desde la pantalla
@@ -310,7 +428,7 @@ Se va tachando a medida que se construye.
 Pendiente de decidir con el dueño: congelar membresías, y deudas o pago en
 cuotas.
 
-## 12. Para armar la guía de usuario
+## 14. Para armar la guía de usuario
 
 Cosas que este archivo no tiene y la guía va a necesitar:
 

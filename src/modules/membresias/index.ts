@@ -4,6 +4,7 @@
  * Los demás módulos importan SOLO desde acá: `@/modules/membresias`.
  */
 
+import type { Context } from 'hono';
 import type { DB } from '@/lib/db';
 import type { ServicioClientes } from '@/modules/clientes';
 import { crearServicioMembresias } from './application/membresias.service';
@@ -15,7 +16,7 @@ export function moduloMembresias(
   deps: {
     clientes: Pick<ServicioClientes, 'obtener'>;
     /** id del usuario que opera; queda en creado_por y registrado_por. */
-    operadorActual: () => number;
+    operadorActual: (c: Context) => number;
   },
 ) {
   const servicio = crearServicioMembresias(crearRepoMembresias(db), deps.clientes);

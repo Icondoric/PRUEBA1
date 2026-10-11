@@ -15,7 +15,9 @@
  */
 import { CircleCheck, CircleHelp, CircleX, TriangleAlert } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
+import { useAccesos, useCerrarSesion } from '@/web/features/sesion/api/sesion.api';
+import { seccionesDe } from '@/web/router/secciones';
 import { ErrorDeApi } from '@/web/shared/lib/api';
 import { formatearFecha } from '@/web/shared/lib/formato';
 import {
@@ -36,6 +38,20 @@ type Pantalla =
 type ClienteDelPase = { clienteId: number; nombreCompleto: string; nroSocio: number };
 
 const registrar = useRegistrarIngreso();
+
+const router = useRouter();
+const { usuario, puede } = useAccesos();
+const cerrar = useCerrarSesion();
+
+/** Quien solo tiene el check-in no tiene a dónde "salir": cierra sesión. */
+const tieneOtrasSecciones = computed(
+  () => !!usuario.value && seccionesDe(usuario.value).some((s) => s.ruta !== 'checkin'),
+);
+
+async function cerrarSesion() {
+  await cerrar.mutateAsync().catch(() => null);
+  await router.replace({ name: 'ingresar' });
+}
 
 const campo = ref<HTMLInputElement | null>(null);
 const texto = ref('');
@@ -121,7 +137,8 @@ function cerrarVentaDePase() {
 }
 
 function atajos(evento: KeyboardEvent) {
-  if (evento.key === 'F2') {
+  // Vender pases es un acceso aparte del check-in.
+  if (evento.key === 'F2' && puede('checkin.pases')) {
     evento.preventDefault();
     abrirVentaDePase();
   }
@@ -260,7 +277,9 @@ const FONDO: Record<Tono, string> = {
 
         <p class="max-w-4xl text-4xl font-medium text-balance">{{ vista.mensaje }}</p>
         <p v-if="vista.detalle" class="text-2xl">{{ vista.detalle }}</p>
-        <p v-if="rebotado" class="text-2xl">F2 para venderle un pase por sesión</p>
+        <p v-if="rebotado && puede('checkin.pases')" class="text-2xl">
+          F2 para venderle un pase por sesión
+        </p>
       </template>
 
       <p v-else class="text-muted-foreground max-w-2xl text-3xl text-balance">
@@ -268,19 +287,29 @@ const FONDO: Record<Tono, string> = {
       </p>
     </div>
 
-    <p class="absolute bottom-4 left-4 text-sm opacity-70">
+    <p v-if="puede('checkin.pases')" class="absolute bottom-4 left-4 text-sm opacity-70">
       <kbd class="rounded border border-current px-1.5 py-0.5 font-sans">F2</kbd>
       Vender pase por sesión
     </p>
 
     <!-- Solo con mouse y fuera del orden de tabulación: el teclado es del check-in. -->
     <RouterLink
-      :to="{ name: 'clientes' }"
+      v-if="tieneOtrasSecciones"
+      :to="{ name: 'inicio' }"
       tabindex="-1"
       class="absolute right-4 bottom-4 text-sm underline underline-offset-4 opacity-70 hover:opacity-100"
     >
       Salir del check-in
     </RouterLink>
+    <button
+      v-else
+      type="button"
+      tabindex="-1"
+      class="absolute right-4 bottom-4 text-sm underline underline-offset-4 opacity-70 hover:opacity-100"
+      @click="cerrarSesion"
+    >
+      Cerrar sesión
+    </button>
 
     <PaseRapido
       v-if="ventaDePase"

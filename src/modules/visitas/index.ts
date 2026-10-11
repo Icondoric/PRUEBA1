@@ -4,6 +4,7 @@
  * Los demás módulos importan SOLO desde acá: `@/modules/visitas`.
  */
 
+import type { Context } from 'hono';
 import type { DB } from '@/lib/db';
 import type { ServicioClientes } from '@/modules/clientes';
 import { crearServicioVisitas } from './application/visitas.service';
@@ -15,7 +16,7 @@ export function moduloVisitas(
   deps: {
     clientes: Pick<ServicioClientes, 'buscarPorIdentificador'>;
     /** id del usuario que opera; queda en registrado_por. */
-    operadorActual: () => number;
+    operadorActual: (c: Context) => number;
   },
 ) {
   const servicio = crearServicioVisitas(crearRepoVisitas(db), deps.clientes);

@@ -10,6 +10,7 @@ import { refDebounced } from '@vueuse/core';
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import type { EstadoMembresia } from '@/modules/membresias';
+import { useAccesos } from '@/web/features/sesion/api/sesion.api';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
 import { formatearBs, formatearFecha, plural } from '@/web/shared/lib/formato';
 import { Badge } from '@/web/shared/ui/badge';
@@ -26,6 +27,8 @@ import {
 import { useHistorialMembresias } from '../api/membresias.api';
 
 const props = defineProps<{ clienteId: number }>();
+
+const { puede } = useAccesos();
 
 const { data, error, isPending, isFetching, refetch } = useHistorialMembresias(
   () => props.clienteId,
@@ -113,7 +116,7 @@ const ETIQUETAS: Record<EstadoMembresia, string> = {
             <p class="text-muted-foreground text-sm">{{ resumen.detalle }}</p>
           </div>
         </div>
-        <Button as-child>
+        <Button v-if="puede('membresias.vender')" as-child>
           <RouterLink :to="{ name: 'membresia-nueva', params: { id: clienteId } }">
             {{
               data.cobertura.situacion === 'sin_membresia'

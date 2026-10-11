@@ -45,3 +45,22 @@ export function carpetaRespaldos(): string {
 export function carpetaRespaldosNube(): string | undefined {
   return process.env.GYM_RESPALDOS_NUBE?.trim() || undefined;
 }
+
+/**
+ * Horas sin uso tras las que una sesión se cierra sola.
+ *
+ * Default 8: un turno. Recepción entra una vez por turno, y el kiosco del
+ * check-in no se corta mientras se use.
+ */
+export function horasDeSesion(): number {
+  const crudo = process.env.GYM_SESION_HORAS?.trim();
+  if (!crudo) return 8;
+
+  const n = Number(crudo);
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new Error(
+      `GYM_SESION_HORAS inválido: "${crudo}". Tiene que ser un número mayor que 0.`,
+    );
+  }
+  return n;
+}

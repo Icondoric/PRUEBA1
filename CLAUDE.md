@@ -139,6 +139,58 @@ aplica **selectivamente**, como ella misma indica:
   componentes y tokens como están. **Cada vez que crees una pantalla o un
   componente nuevo, anotalo en ese archivo** con lo que habrá que ajustarle.
 
+## Roles — quién ve qué
+
+El sistema es para dos roles, y toda pantalla o ruta nueva se piensa desde el
+principio para uno de ellos:
+
+- **Recepción** (`recepcion`): clientes, membresías, check-in, venta de pases,
+  pagos y visitas.
+- **Dueño** (`admin`): todo lo de recepción **y además los reportes**. Los
+  reportes son SOLO del dueño, en la PC o desde su celular. Recepción no los
+  ve ni en el menú.
+
+Decidido con el usuario (2026-10-11):
+
+- **Cada persona tiene su propio usuario.** Nada de cuentas compartidas: hay
+  que poder saber quién cobró qué.
+- **Anular un pago: solo el dueño por defecto**, pero es un acceso que puede
+  darle a alguien, como cualquier otro.
+- **Caja:** recepción ve lo cobrado **solo del día de hoy** (lo necesita para
+  cerrar caja). Otras fechas y rangos, solo el dueño.
+- **Accesos por módulo y submódulo.** El dueño tiene todo, siempre. A cada
+  usuario le da o le quita accesos con casillas agrupadas por módulo; un
+  usuario nuevo arranca con lo básico de recepción. El catálogo está en
+  `src/modules/usuarios/domain/permisos.ts`: toda función nueva que no sea
+  para todos agrega ahí su acceso.
+- **Solo el dueño administra usuarios y accesos.** Eso no se delega.
+- **La sesión se cierra tras 8 horas sin uso** (`GYM_SESION_HORAS`). Puede
+  cambiar más adelante.
+- **La cuenta del dueño se crea con `pnpm usuarios:dueno`**, no desde el
+  navegador. El mismo comando le cambia la contraseña si la olvida.
+
+**Cómo está hecho** (ya funciona; no lo reinventes):
+
+- **Toda ruta de la API está cerrada salvo que `src/server/acceso.ts` diga
+  quién puede usarla.** Ruta nueva = una línea en esa tabla. Sin la línea,
+  queda cerrada para todos, y hay un test que falla.
+- Las rutas y los servicios NO revisan accesos por su cuenta: lo hace el
+  guardia (`src/server/middleware/sesion.ts`) antes de que el pedido llegue.
+  La única excepción es cuando depende del contenido del pedido (ver la caja
+  de otra fecha), y ahí decide el servicio.
+- Quién registró algo sale de la sesión: `operadorActual(c)`. Nunca de un
+  dato que mande el navegador.
+- En el frontend, cada ruta declara `meta: { permisos: [...] }` o
+  `soloDueno`, y los botones se muestran con `useAccesos().puede(...)`.
+  Eso es comodidad: la seguridad es la del servidor.
+- El navegador no puede importar valores de `@/modules/usuarios` (arrastra
+  `node:crypto`): usa `@/modules/usuarios/contrato`. Los tipos sí, con
+  `import type`.
+- Contraseñas con `scrypt` de Node, sin dependencias. En la base se guarda
+  el hash de la contraseña y el hash del token de sesión, nunca los originales.
+
+Si una pantalla nueva no queda claro de qué rol o acceso es, preguntá.
+
 ## Documentación para la guía de usuario
 
 `docs/SISTEMA.md` describe lo que el sistema hace desde el punto de vista de

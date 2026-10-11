@@ -8,6 +8,7 @@
  */
 import { ref } from 'vue';
 import { RouterLink } from 'vue-router';
+import { useAccesos } from '@/web/features/sesion/api/sesion.api';
 import { formatearBs, formatearFecha } from '@/web/shared/lib/formato';
 import { Badge } from '@/web/shared/ui/badge';
 import { Button } from '@/web/shared/ui/button';
@@ -24,6 +25,8 @@ import { NOMBRE_METODO } from '../lib/metodos';
 import AnularPagoDialog from './AnularPagoDialog.vue';
 
 defineProps<{ pagos: PagoVista[]; mostrarCliente?: boolean }>();
+
+const { puede } = useAccesos();
 
 const porAnular = ref<PagoVista | null>(null);
 </script>
@@ -69,9 +72,19 @@ const porAnular = ref<PagoVista | null>(null);
           <TableCell class="whitespace-normal">
             <template v-if="pago.anulado">
               <Badge variant="destructive">Anulado</Badge>
-              <p class="text-muted-foreground mt-1 text-xs">{{ pago.motivoAnulacion }}</p>
+              <p class="text-muted-foreground mt-1 text-xs">
+                {{ pago.motivoAnulacion }}
+                <template v-if="pago.anuladoPorNombre">
+                  · anulado por {{ pago.anuladoPorNombre }}
+                </template>
+              </p>
             </template>
-            <Button v-else variant="ghost" size="sm" @click="porAnular = pago">
+            <Button
+              v-else-if="puede('pagos.anular')"
+              variant="ghost"
+              size="sm"
+              @click="porAnular = pago"
+            >
               Anular pago
             </Button>
           </TableCell>

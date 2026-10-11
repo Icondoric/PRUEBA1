@@ -10,6 +10,7 @@ import { Plus, Search } from '@lucide/vue';
 import { refDebounced } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { useAccesos } from '@/web/features/sesion/api/sesion.api';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
 import { formatearCi, formatearFecha, plural } from '@/web/shared/lib/formato';
 import { Button } from '@/web/shared/ui/button';
@@ -45,6 +46,7 @@ import ClienteEtiquetas from '../components/ClienteEtiquetas.vue';
 const POR_PAGINA = 25;
 
 const route = useRoute();
+const { puede } = useAccesos();
 const router = useRouter();
 
 const deLaUrl = (valor: unknown) => (typeof valor === 'string' ? valor : '');
@@ -134,7 +136,7 @@ const descripcionFiltros = computed(() => {
   <div class="space-y-5">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">Clientes</h1>
-      <Button as-child>
+      <Button v-if="puede('clientes.gestionar')" as-child>
         <RouterLink :to="{ name: 'cliente-nuevo' }">
           <Plus aria-hidden="true" />
           Registrar cliente
@@ -288,7 +290,7 @@ const descripcionFiltros = computed(() => {
             Acá aparecen los socios y quienes compran un pase por sesión. Para un pase
             alcanza con el nombre.
           </p>
-          <Button as-child size="sm">
+          <Button v-if="puede('clientes.gestionar')" as-child size="sm">
             <RouterLink :to="{ name: 'cliente-nuevo' }">Registrar cliente</RouterLink>
           </Button>
         </div>

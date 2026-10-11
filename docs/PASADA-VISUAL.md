@@ -119,6 +119,41 @@ Son copias en el repo: se editan acá.
 |---|---|
 | `views/VisitasView.vue` | Formulario de registro, aviso de confirmación, tabla del último mes. |
 
+### Reportes (`src/web/features/reportes/`) — solo dueño, primero celular
+
+| Archivo | Qué ajustar |
+|---|---|
+| `views/ReportesView.vue` | Las cuatro cajas de "Hoy", las listas de por vencer / vencidos / pases frecuentes, el selector de mes, los botones de exportar (se repiten en cada sección: evaluar un menú único). Probar en un celular real, no solo a 390 px. |
+| `components/BarraDeDato.vue` | Las barras de los gráficos. Hoy usan el color principal sin más. **Antes de tocarlas, cargar la skill `dataviz`**: validar el color con su script en claro y oscuro, extremo redondeado de 4 px, y agregar el detalle al pasar el mouse o tocar. El número va siempre escrito al lado; eso no se quita. |
+
+### Ingreso (`src/web/features/sesion/`)
+
+| Archivo | Qué ajustar |
+|---|---|
+| `views/IngresarView.vue` | Es la primera impresión del sistema: marca del gimnasio, tarjeta de ingreso, aviso de sesión vencida. Falta el botón para ver la contraseña. |
+
+### Usuarios (`src/web/features/usuarios/`) — solo dueño
+
+| Archivo | Qué ajustar |
+|---|---|
+| `views/UsuariosView.vue` | Tabla de usuarios y etiquetas de estado. |
+| `views/UsuarioFormView.vue` | Las cuatro secciones (datos, accesos, contraseña, desactivar) y sus separadores. |
+| `components/AccesosPorModulo.vue` | Las casillas son `<input type="checkbox">` nativos dentro de `fieldset`: falta un componente propio de casilla (el mismo que necesita la venta de membresías). Cuidar que se lea fácil: es la pantalla donde el dueño decide quién puede qué. |
+
+### Otras piezas nuevas
+
+- `layout/AppLayout.vue`: el bloque de abajo con el nombre de quien está
+  adentro y "Cerrar sesión". En angosto el nombre se oculta.
+- `layout/SinAccesoView.vue`: la pantalla de "no tenés acceso".
+
+### Pendientes de ancho angosto en pantallas que ya existían
+
+- `clientes/views/ClientesListaView.vue`: a 390 px la tabla ensancha la
+  página (mide 453 px). Es una pantalla de recepción y se usa en la PC, pero
+  hay que resolverlo.
+- `layout/AppLayout.vue`: en angosto el menú se desliza de costado. Funciona,
+  pero con seis secciones conviene un menú propio para celular.
+
 ## 5. Pantallas que todavía no existen
 
 Se agregan acá a medida que se construyan:
@@ -126,8 +161,8 @@ Se agregan acá a medida que se construyan:
 - [x] Venta rápida de pase por sesión desde el check-in (ya está en la sección 4)
 - [x] Pagos: historial y anulación (ya está en la sección 4)
 - [x] Visitas / cortesías (ya está en la sección 4)
-- [ ] Reportes, pensados para el celular del dueño (rebanada 5)
-- [ ] Login (rebanada 6)
+- [x] Reportes, pensados para el celular del dueño (ya está en la sección 4)
+- [x] Login y usuarios (ya está en la sección 4)
 
 ## 6. Preguntas abiertas para el dueño
 

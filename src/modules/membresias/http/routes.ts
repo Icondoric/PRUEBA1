@@ -6,6 +6,7 @@
  */
 
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { hoyEnZona } from '@/lib/fechas';
 import type { ServicioMembresias } from '../application/membresias.service';
@@ -16,12 +17,11 @@ export function rutasPlanes(servicio: ServicioMembresias) {
 }
 
 /**
- * @param operadorActual id del usuario que está operando. Hoy lo resuelve el
- *   servidor de forma provisoria; cuando exista el login saldrá de la sesión.
+ * @param operadorActual el id de quien inició sesión; queda como quien lo registró.
  */
 export function rutasMembresias(
   servicio: ServicioMembresias,
-  operadorActual: () => number,
+  operadorActual: (c: Context) => number,
 ) {
   return new Hono()
     .get('/', zValidator('query', historialQuerySchema), (c) =>
@@ -33,6 +33,6 @@ export function rutasMembresias(
     )
 
     .post('/', zValidator('json', ventaInputSchema), (c) =>
-      c.json(servicio.vender(c.req.valid('json'), hoyEnZona(), operadorActual()), 201),
+      c.json(servicio.vender(c.req.valid('json'), hoyEnZona(), operadorActual(c)), 201),
     );
 }

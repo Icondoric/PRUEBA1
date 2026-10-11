@@ -9,6 +9,7 @@ import { computed } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import MembresiasDelCliente from '@/web/features/membresias/components/MembresiasDelCliente.vue';
 import PagosDelCliente from '@/web/features/pagos/components/PagosDelCliente.vue';
+import { useAccesos } from '@/web/features/sesion/api/sesion.api';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
 import { formatearCi, formatearFecha } from '@/web/shared/lib/formato';
@@ -18,6 +19,7 @@ import { useCliente } from '../api/clientes.api';
 import ClienteEtiquetas from '../components/ClienteEtiquetas.vue';
 
 const route = useRoute();
+const { puede } = useAccesos();
 const id = computed(() => Number(route.params.id));
 
 const { data: cliente, error, isPending, isFetching, refetch } = useCliente(id);
@@ -83,7 +85,7 @@ const confirmacion = computed(() => {
           </h1>
           <ClienteEtiquetas :cliente="cliente" />
         </div>
-        <Button as-child variant="outline">
+        <Button v-if="puede('clientes.gestionar')" as-child variant="outline">
           <RouterLink :to="{ name: 'cliente-editar', params: { id: cliente.id } }">
             <Pencil aria-hidden="true" />
             Editar datos
@@ -151,7 +153,10 @@ const confirmacion = computed(() => {
 
       <MembresiasDelCliente :cliente-id="cliente.id" />
 
-      <PagosDelCliente :cliente-id="cliente.id" />
+      <PagosDelCliente
+        v-if="puede('clientes.gestionar') || puede('pagos.caja_hoy')"
+        :cliente-id="cliente.id"
+      />
     </template>
 
     <template v-else>

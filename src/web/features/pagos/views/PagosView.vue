@@ -9,6 +9,7 @@ import { refDebounced } from '@vueuse/core';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { METODOS, type Metodo } from '@/modules/pagos';
+import { useAccesos } from '@/web/features/sesion/api/sesion.api';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
 import { formatearBs, formatearFecha, plural } from '@/web/shared/lib/formato';
 import { Button } from '@/web/shared/ui/button';
@@ -27,6 +28,7 @@ import TablaPagos from '../components/TablaPagos.vue';
 import { NOMBRE_METODO } from '../lib/metodos';
 
 const route = useRoute();
+const { puede } = useAccesos();
 const router = useRouter();
 
 const deLaUrl = (valor: unknown) => (typeof valor === 'string' ? valor : '');
@@ -84,7 +86,8 @@ const periodo = computed(() => {
     <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">Pagos</h1>
 
     <form class="flex flex-wrap items-end gap-3" @submit.prevent>
-      <div class="space-y-1.5">
+      <!-- Otras fechas: solo quien tiene ese acceso. El resto ve el día de hoy. -->
+      <div v-if="puede('pagos.otras_fechas')" class="space-y-1.5">
         <Label for="pagos-desde">Desde</Label>
         <Input
           id="pagos-desde"
@@ -95,7 +98,7 @@ const periodo = computed(() => {
           @update:model-value="irA({ desde: String($event) })"
         />
       </div>
-      <div class="space-y-1.5">
+      <div v-if="puede('pagos.otras_fechas')" class="space-y-1.5">
         <Label for="pagos-hasta">Hasta</Label>
         <Input
           id="pagos-hasta"
