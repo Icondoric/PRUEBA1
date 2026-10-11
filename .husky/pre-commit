@@ -1,0 +1,7 @@
+#!/bin/sh
+# El árbitro objetivo. Si esto falla, el commit no entra.
+# Correlo vos también antes de pedirle un cambio grande al agente.
+
+pnpm typecheck || exit 1
+pnpm lint      || exit 1
+pnpm test      || exit 1

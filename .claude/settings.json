@@ -1,0 +1,50 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm test:*)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm build)",
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm db:seed)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Read(**)",
+      "Edit(src/**)",
+      "Write(src/**)",
+      "Edit(scripts/**)",
+      "Write(scripts/**)"
+    ],
+    "ask": [
+      "Bash(pnpm db:migrate:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(git push:*)",
+      "Edit(drizzle/**)",
+      "Edit(.env*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Read(datos/**)",
+      "Edit(datos/**)",
+      "Read(respaldos/**)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm typecheck 2>&1 | tail -30",
+            "timeout": 90
+          }
+        ]
+      }
+    ]
+  }
+}

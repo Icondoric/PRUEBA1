@@ -1,0 +1,143 @@
+# Sistema de Gestión de Gimnasio
+
+Gimnasio chico (~150 socios), una sede. Control de membresías, pagos y accesos.
+No es un CRM: no hay facturación fiscal, no hay cobros automáticos, no hay
+campañas, no hay clases ni reservas.
+
+**Antes de escribir código, leé `docs/ARQUITECTURA.md`.** Dice en qué capa va
+cada cosa, con ejemplos. El módulo `src/modules/clientes/` está completo y
+testeado: es el molde. Todo módulo nuevo lo copia.
+
+## Arquitectura: local-first
+
+El sistema **corre en la PC de recepción**. Esa PC es el servidor y la dueña de
+los datos. Un solo proceso Node sirve el frontend y la API; la base es un
+archivo SQLite.
+
+- **El check-in le pega a `localhost`. Nunca depende de internet.** Por eso NO
+  hay service worker, ni snapshot en IndexedDB, ni cola de sincronización. Si
+  proponés agregar eso, estás resolviendo un problema que esta arquitectura ya
+  eliminó.
+- **El dueño entra desde el celular por Tailscale**, solo a reportes.
+- **Backup automático a la nube** dos veces al día. Única dependencia de
+  internet, y es diferible.
+- **Debe correr en Windows, macOS y Linux.** Nada de rutas con `\`, ni comandos
+  de un SO, ni nada que requiera instalar Postgres o Docker.
+- **Migrable a la nube.** El esquema evita features propias de SQLite y todo
+  acceso a datos pasa por Drizzle.
+
+## Stack
+
+Backend: TypeScript · Hono · SQLite + Drizzle · Zod
+Frontend: Vue 3 (`<script setup>`) · Vite · shadcn-vue + Tailwind ·
+vue-router · `@tanstack/vue-query` · vee-validate
+Tests: Vitest
+
+Un solo puerto, un solo proceso, un solo archivo de base de datos.
+
+## Comandos
+
+```
+pnpm dev · pnpm build · pnpm start
+pnpm test · pnpm typecheck · pnpm lint · pnpm format
+pnpm db:generate · pnpm db:migrate · pnpm db:seed
+pnpm backup
+```
+
+## Capas (resumen; el detalle está en docs/ARQUITECTURA.md)
+
+```
+http           valida forma con Zod, traduce a HTTP. Rutas finas, SIN try/catch
+application    casos de uso. Orquesta dominio + repositorio. Sin SQL, sin HTTP
+domain         reglas puras. NO importa drizzle, hono ni @/lib/db. Todo por parámetro
+infrastructure todo el SQL. Sin reglas de negocio
+```
+
+Un módulo se importa por su `index.ts`, nunca por sus internals. Las dos reglas
+las verifica ESLint en el pre-commit.
+
+## Reglas del dominio — NO NEGOCIABLES
+
+- **Dinero**: enteros en centavos. Nunca float, nunca decimales.
+- **Fechas de membresía**: texto `'YYYY-MM-DD'`. Nunca timestamp, nunca zona
+  horaria. Usá siempre los helpers de `src/lib/fechas.ts`.
+- **Solo `hoyEnZona()` lee el reloj.** Todo lo demás recibe `hoy` por parámetro.
+- **Renovar crea una membresía NUEVA.** Jamás `UPDATE` de `fecha_fin`. El
+  historial es el producto: de ahí sale la antigüedad del socio.
+- **"Vencido" se CALCULA** (`fecha_fin >= hoy`). Prohibido guardarlo: se
+  desactualiza a medianoche y nadie se entera.
+- **Renovación encadenada**: anticipada arranca al día siguiente del
+  vencimiento anterior; vencida arranca hoy. Vive en
+  `modules/membresias/domain/renovacion.ts`.
+- **El pase por sesión NO encadena.** Pasar `encadenable: false` cuando
+  `plan.esPaseDiario`. Sin eso, un socio con mensualidad vigente que paga una
+  sesión recibiría un pase para dentro de tres semanas.
+- **Precios con vigencia**: el precio de un plan nunca se edita; se agrega una
+  fila con vigencia. La membresía guarda el precio cobrado.
+  Ver `modules/membresias/domain/precios.ts`.
+- **Pagó algo → `cliente` + membresía + `pago`. Entró gratis → `visita`.**
+  Esa es la única frontera.
+- **Un cliente puede ser ligero: solo nombre.** Apellido, CI y teléfono son
+  opcionales. Exigir datos completos a quien paga una sesión hace que
+  recepción invente datos.
+- **"Socio" y "eventual" se DERIVAN**, igual que "vencido":
+  socio = tiene alguna membresía de plan con `esPaseDiario = false`.
+  Los pases nunca cuentan como socios activos en los reportes.
+- **Identidad = `ci` + `ci_extension`**, y el CI puede faltar (menores): ahí
+  manda el `nro_socio`. Normalizar siempre con `normalizarIdentificador`.
+- **Una sola función decide el acceso**: `evaluarAcceso()` en
+  `modules/checkin/domain/acceso.ts`. Pura.
+- **Los ingresos se registran SIEMPRE**, permitidos y rechazados.
+- **Nada se borra.** Soft delete en clientes; los pagos se anulan con motivo.
+- **Auditoría**: toda membresía y todo pago guardan quién los registró
+  (`creado_por`, `registrado_por`). No los dejes en null.
+
+## Errores
+
+Excepciones tipadas de `src/lib/errors.ts` y un único middleware que las
+traduce. Nunca `new Error()` pelado, nunca un objeto con `status`, nunca
+try/catch en una ruta. Lo que no es `AppError` sale 500 y se loguea entero: no
+disfraces una falla técnica de mensaje amable.
+
+## Check-in — requisitos duros
+
+- Responde en **< 100ms**. Es SQLite local, no hay excusa.
+- Autofoco permanente, Enter envía, sin mouse.
+- Pantalla completa: verde / amarillo (≤3 días) / rojo, con nombre, foto y días
+  restantes. Se limpia sola a los 3 segundos.
+- Sonido distinto para permitido y rechazado.
+- Un pase por sesión vigente dice "válido hoy" en verde, no "vence hoy" en
+  amarillo. Avisar que renueve un pase diario es ruido.
+
+## Pendiente de confirmar con el dueño
+
+NO implementar hasta que el usuario lo confirme:
+
+- **Congelamiento de membresías.** El enum ya contempla `'congelada'`, pero no
+  hay lógica. Si se aprueba: tabla `congelamientos` + recálculo, nunca editando
+  la membresía existente.
+- **Deuda o pago en cuotas.** Hoy el modelo asume pago completo al vender.
+
+## Convenciones
+
+- Dominio en español (cliente, membresía, pago, ingreso, visita); tipos e
+  infraestructura en inglés.
+- Frontend por funcionalidad: `web/features/<nombre>/{api,views,components}`
+  y `web/shared/` para lo realmente compartido.
+- Todo dato del servidor pasa por `@tanstack/vue-query`.
+- Los esquemas Zod se comparten entre backend y formularios.
+
+## Nunca
+
+- No agregues dependencias sin preguntar.
+- No edites una migración ya aplicada; creá una nueva con `pnpm db:generate`.
+- No uses `any`, ni `as` para callar al type checker.
+- No uses `new Date()` para lógica de membresías.
+- No uses features exclusivas de SQLite.
+- No pongas SQL fuera de `infrastructure/`.
+- No pongas reglas de negocio en `http/` ni en un componente de Vue.
+- No uses la Options API de Vue. Siempre `<script setup lang="ts">`.
+- No guardes datos del servidor en Pinia ni en refs sueltos.
+- No instales shadcn-vue como dependencia: los componentes se copian al repo.
+- No toques `renovacion.ts`, `precios.ts`, `acceso.ts` ni `cliente.ts` sin
+  correr sus tests. Si un cambio tuyo rompe uno, el que está mal es tu código.
