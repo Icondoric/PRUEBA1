@@ -81,6 +81,9 @@ export const clientes = sqliteTable(
     /** Bloqueo manual: rebota en el check-in aunque esté vigente. */
     bloqueado: integer('bloqueado', { mode: 'boolean' }).notNull().default(false),
     motivoBloqueo: text('motivo_bloqueo'),
+    /** Quién lo bloqueó y cuándo. Null si no está bloqueado. */
+    bloqueadoPor: integer('bloqueado_por').references(() => usuarios.id),
+    bloqueadoEn: integer('bloqueado_en', { mode: 'timestamp' }),
     notas: text('notas'),
     /** Soft delete. Los clientes no se borran. */
     activo: integer('activo', { mode: 'boolean' }).notNull().default(true),

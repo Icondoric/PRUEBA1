@@ -53,7 +53,14 @@ const DEPARTAMENTOS: Record<string, string> = {
 };
 
 // En el orden en que aparecen: así se elige el primer campo con error.
-const CAMPOS = ['nombre', 'apellido', 'ci', 'ciExtension', 'telefono'] as const;
+const CAMPOS = [
+  'nombre',
+  'apellido',
+  'ci',
+  'ciExtension',
+  'telefono',
+  'referidoPor',
+] as const;
 type Campo = (typeof CAMPOS)[number];
 const esCampo = (valor: unknown): valor is Campo => CAMPOS.some((c) => c === valor);
 
@@ -65,6 +72,7 @@ const { handleSubmit, defineField, errors, values } = useForm({
     ci: props.inicial?.ci ?? '',
     ciExtension: props.inicial?.ciExtension ?? 'LP',
     telefono: props.inicial?.telefono ?? '',
+    referidoPor: props.inicial?.referidoPor ?? '',
   },
 });
 // Los errores que devuelve el servidor van aparte: ver useErroresDelServidor.
@@ -80,6 +88,7 @@ const [apellido, apellidoAttrs] = defineField('apellido', alSalir);
 const [ci, ciAttrs] = defineField('ci', alSalir);
 const [ciExtension] = defineField('ciExtension', alSalir);
 const [telefono, telefonoAttrs] = defineField('telefono', alSalir);
+const [referidoPor, referidoPorAttrs] = defineField('referidoPor', alSalir);
 
 /** Se anuncia a lectores de pantalla y se muestra sobre los botones. */
 const aviso = ref('');
@@ -205,6 +214,23 @@ watch(
           inputmode="tel"
           autocomplete="off"
           @update:model-value="telefono = String($event)"
+        />
+      </CampoFormulario>
+
+      <CampoFormulario
+        id="cliente-referidoPor"
+        v-slot="{ control }"
+        etiqueta="Referido por"
+        opcional
+        ayuda="Número de socio o CI de quien lo trajo."
+        :error="errors.referidoPor ?? delServidor.referidoPor"
+      >
+        <Input
+          v-bind="{ ...control, ...referidoPorAttrs }"
+          :model-value="referidoPor ?? ''"
+          inputmode="numeric"
+          autocomplete="off"
+          @update:model-value="referidoPor = String($event)"
         />
       </CampoFormulario>
     </div>

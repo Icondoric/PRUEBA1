@@ -164,11 +164,15 @@ Son copias en el repo: se editan acá.
 
 ### Pendientes de ancho angosto en pantallas que ya existían
 
-- `clientes/views/ClientesListaView.vue`: a 390 px la tabla ensancha la
-  página (mide 453 px). Es una pantalla de recepción y se usa en la PC, pero
-  hay que resolverlo.
-- `layout/AppLayout.vue`: en angosto el menú se desliza de costado. Funciona,
-  pero con seis secciones conviene un menú propio para celular.
+- `clientes/views/ClientesListaView.vue`: **resuelto** el desborde a 390 px
+  (era la paginación, no la tabla). En angosto quedan tres columnas (nº,
+  nombre y tipo) y la paginación dice "3 de 7". Falta decidir si en celular
+  conviene mostrar tarjetas en vez de tabla.
+- `layout/AppLayout.vue`: en angosto el menú se desliza de costado y "Cerrar
+  sesión" queda solo como ícono. Funciona, pero con siete secciones conviene
+  un menú propio para celular.
+- Revisadas a 390 px sin desborde: clientes, ficha, pagos, usuarios, planes,
+  visitas y reportes. Sin revisar a ese ancho: los formularios y los diálogos.
 
 ## 5. Pantallas que todavía no existen
 

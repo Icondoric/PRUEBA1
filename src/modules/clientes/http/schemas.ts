@@ -18,6 +18,8 @@ export const clienteInputSchema = z.object({
   ciExtension: z.string().optional().nullable(),
   telefono: z.string().optional().nullable(),
   referidoPorClienteId: z.coerce.number().int().positive().optional().nullable(),
+  /** Nº de socio o CI de quien lo trajo, como se teclea. Lo resuelve el servicio. */
+  referidoPor: z.string().max(40).optional().nullable(),
 });
 
 export const listarQuerySchema = z.object({

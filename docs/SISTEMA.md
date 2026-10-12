@@ -103,6 +103,9 @@ Botón **Registrar cliente**.
 - **Extensión del CI:** el departamento (LP, CB, SC…). Por defecto, La Paz.
 - Dos clientes no pueden tener el mismo CI con la misma extensión. Si se
   intenta, el sistema avisa de quién es ese CI.
+- **Referido por** (opcional): el número de socio o el CI de quien lo trajo.
+  Si ese número no es de ningún cliente, el sistema avisa y no guarda. Se
+  puede agregar, cambiar o quitar después, desde "Editar datos".
 
 Al guardar se abre la ficha del cliente nuevo, con su número de socio.
 
@@ -112,7 +115,7 @@ Muestra el nombre, si es socio o eventual, sus datos y su membresía.
 
 - **Editar datos:** cambia nombre, apellido, CI, extensión y teléfono.
 - **Acceso bloqueado:** si el cliente está bloqueado, se ve un aviso con el
-  motivo.
+  motivo, quién lo bloqueó y cuándo.
 - **Referido por:** si alguien lo trajo, aparece quién, con enlace a su ficha.
 - **Pagos:** al final de la ficha está todo lo que pagó, y desde ahí se puede
   anular un pago (ver la sección de Pagos).
@@ -124,6 +127,7 @@ Al pie de la ficha, en "Acceso y estado". Lo ve quien tiene el acceso
 
 - **Bloquear cliente** pide el motivo, que es obligatorio. Desde ese momento
   el check-in lo rechaza aunque tenga la membresía al día.
+- Queda registrado **quién lo bloqueó y a qué hora**, y se ve en la ficha.
 - No toca su membresía ni sus pagos: los días siguen corriendo.
 - **Desbloquear cliente** lo deja entrar de nuevo y borra el motivo.
 
@@ -411,6 +415,7 @@ Se entra haciendo clic en su fila. Cada cosa tiene su propio botón:
 ### 10.4 Lo que queda registrado
 
 - Cada venta, pago y visita guarda **quién la cargó**.
+- Al bloquear a un cliente queda **quién lo bloqueó** y cuándo.
 - Al anular un pago queda **quién lo anuló** y cuándo; se ve en la tabla.
 - Cada acceso guarda quién lo dio.
 
@@ -459,6 +464,7 @@ puede salir dañada.
 | Ese precio ya empezó a regir o ya se vendió con él: no se puede quitar | Cargar otro precio encima para corregirlo. |
 | Un pase por sesión dura 1 día | Si dura más, es un plan, no un pase. |
 | La contraseña actual no es esa | Revisar la contraseña con la que se entró. |
+| Un cliente no puede referirse a sí mismo | Revisar el número de quien lo trajo. |
 | Usuario o contraseña incorrectos | Revisar las dos cosas. El mensaje es el mismo si el usuario no existe o está desactivado. |
 | Demasiados intentos seguidos. Esperá … segundos | Esperar y volver a probar con calma. |
 | Tu sesión se cerró por inactividad | Volver a ingresar. |
@@ -487,10 +493,10 @@ Se va tachando a medida que se construye.
 - [ ] Resumen diario al dueño
 - [x] Cargar y cambiar planes, precios y promociones desde la pantalla
 - [x] Bloquear y desbloquear un cliente desde la pantalla
-- [ ] Registrar quién bloqueó a un cliente y cuándo (hoy solo queda el motivo)
+- [x] Registrar quién bloqueó a un cliente y cuándo
 - [x] Dar de baja y reactivar un cliente desde la pantalla
 - [ ] Fotos de los clientes
-- [ ] Indicar quién refirió a un cliente al registrarlo
+- [x] Indicar quién refirió a un cliente al registrarlo
 - [ ] El aspecto visual definitivo (ver `docs/PASADA-VISUAL.md`)
 
 Pendiente de decidir con el dueño: congelar membresías, y deudas o pago en

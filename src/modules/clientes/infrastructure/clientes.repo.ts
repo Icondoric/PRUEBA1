@@ -11,7 +11,7 @@
 
 import { and, count, desc, eq, like, max, or, sql } from 'drizzle-orm';
 import type { DB } from '@/lib/db';
-import { clientes, membresias, planes } from '@/lib/db/schema';
+import { clientes, membresias, planes, usuarios } from '@/lib/db/schema';
 import type { ClienteNormalizado } from '../domain/cliente';
 
 export type ClienteFila = typeof clientes.$inferSelect;
@@ -80,7 +80,7 @@ export function crearRepoClientes(db: DB) {
 
     actualizar(
       id: number,
-      cambios: Partial<ClienteNormalizado>,
+      cambios: Partial<ClienteNormalizado> & { referidoPorClienteId?: number | null },
     ): ClienteFila | undefined {
       return db
         .update(clientes)
@@ -90,18 +90,41 @@ export function crearRepoClientes(db: DB) {
         .get();
     },
 
-    bloquear(id: number, motivo: string): void {
+    bloquear(id: number, motivo: string, bloqueadoPor: number, bloqueadoEn: Date): void {
       db.update(clientes)
-        .set({ bloqueado: true, motivoBloqueo: motivo, updatedAt: new Date() })
+        .set({
+          bloqueado: true,
+          motivoBloqueo: motivo,
+          bloqueadoPor,
+          bloqueadoEn,
+          updatedAt: new Date(),
+        })
         .where(eq(clientes.id, id))
         .run();
     },
 
     desbloquear(id: number): void {
       db.update(clientes)
-        .set({ bloqueado: false, motivoBloqueo: null, updatedAt: new Date() })
+        .set({
+          bloqueado: false,
+          motivoBloqueo: null,
+          bloqueadoPor: null,
+          bloqueadoEn: null,
+          updatedAt: new Date(),
+        })
         .where(eq(clientes.id, id))
         .run();
+    },
+
+    /** El nombre de un usuario del sistema, para decir quién bloqueó. */
+    nombreDeUsuario(id: number): string | null {
+      return (
+        db
+          .select({ nombre: usuarios.nombre })
+          .from(usuarios)
+          .where(eq(usuarios.id, id))
+          .get()?.nombre ?? null
+      );
     },
 
     reactivar(id: number): void {

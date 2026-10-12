@@ -229,11 +229,11 @@ const descripcionFiltros = computed(() => {
         <Table class="table-fixed">
           <TableHeader class="bg-background sticky top-0">
             <TableRow>
-              <TableHead class="w-24 text-right">Nº socio</TableHead>
+              <TableHead class="w-16 text-right sm:w-24">Nº</TableHead>
               <TableHead>Nombre</TableHead>
-              <TableHead class="w-36">CI</TableHead>
+              <TableHead class="hidden w-36 sm:table-cell">CI</TableHead>
               <TableHead class="hidden w-32 lg:table-cell">Teléfono</TableHead>
-              <TableHead class="w-44">Tipo</TableHead>
+              <TableHead class="w-28 sm:w-44">Tipo</TableHead>
               <TableHead class="hidden w-32 md:table-cell">Registro</TableHead>
             </TableRow>
           </TableHeader>
@@ -242,7 +242,9 @@ const descripcionFiltros = computed(() => {
             <TableRow v-for="n in 10" :key="n" class="h-11">
               <TableCell><Skeleton class="ml-auto h-4 w-8" /></TableCell>
               <TableCell><Skeleton class="h-4 w-40" /></TableCell>
-              <TableCell><Skeleton class="h-4 w-24" /></TableCell>
+              <TableCell class="hidden sm:table-cell">
+                <Skeleton class="h-4 w-24" />
+              </TableCell>
               <TableCell class="hidden lg:table-cell"
                 ><Skeleton class="h-4 w-20"
               /></TableCell>
@@ -272,7 +274,7 @@ const descripcionFiltros = computed(() => {
                   {{ cliente.nombreCompleto }}
                 </RouterLink>
               </TableCell>
-              <TableCell class="tabular-nums">
+              <TableCell class="hidden tabular-nums sm:table-cell">
                 {{ formatearCi(cliente.ci, cliente.ciExtension) }}
               </TableCell>
               <TableCell class="hidden tabular-nums lg:table-cell">
@@ -336,16 +338,21 @@ const descripcionFiltros = computed(() => {
         >
           <PaginationContent v-slot="{ items }">
             <PaginationPrevious>Anterior</PaginationPrevious>
+            <!-- En pantalla angosta los números no entran: va "3 de 7". -->
+            <span class="px-2 text-sm tabular-nums sm:hidden">
+              {{ page }} de {{ data.paginas }}
+            </span>
             <template v-for="(item, indice) in items" :key="indice">
               <PaginationItem
                 v-if="item.type === 'page'"
+                class="hidden sm:inline-flex"
                 :value="item.value"
                 :is-active="item.value === page"
                 :aria-label="`Página ${item.value}`"
               >
                 {{ item.value }}
               </PaginationItem>
-              <PaginationEllipsis v-else :index="indice" />
+              <PaginationEllipsis v-else class="hidden sm:flex" :index="indice" />
             </template>
             <PaginationNext>Siguiente</PaginationNext>
           </PaginationContent>

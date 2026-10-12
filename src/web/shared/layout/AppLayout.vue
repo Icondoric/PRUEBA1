@@ -83,10 +83,13 @@ async function salir() {
           type="button"
           class="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex h-9 items-center gap-2 rounded-md px-2 text-sm font-medium whitespace-nowrap outline-none focus-visible:ring-3"
           :disabled="cerrar.isPending.value"
+          aria-label="Cerrar sesión"
+          title="Cerrar sesión"
           @click="salir"
         >
           <LogOut class="size-4" aria-hidden="true" />
-          Cerrar sesión
+          <!-- En angosto queda solo el ícono, para dejarle lugar a las secciones. -->
+          <span class="hidden md:inline">Cerrar sesión</span>
         </button>
       </div>
     </aside>

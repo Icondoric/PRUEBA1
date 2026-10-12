@@ -96,3 +96,30 @@ export function centavosParaCampo(centavos: number): string {
   const enteros = Math.trunc(centavos / 100);
   return resto === 0 ? String(enteros) : `${enteros},${String(resto).padStart(2, '0')}`;
 }
+
+/**
+ * Un momento real (auditoría: cuándo se bloqueó, cuándo se anuló) →
+ * '10/03/2026 11:30', en la hora del gimnasio.
+ *
+ * Esto NO es una fecha de membresía: aquellas son texto 'YYYY-MM-DD' y no
+ * llevan zona. Acá sí hay una hora de reloj, y se muestra en La Paz esté donde
+ * esté quien mira (el dueño, desde el celular, en otro huso).
+ */
+export function formatearMomento(momento: string | Date | null | undefined): string {
+  if (!momento) return '—';
+  const fecha = new Date(momento);
+  if (Number.isNaN(fecha.getTime())) return '—';
+
+  const partes = new Intl.DateTimeFormat('es-BO', {
+    timeZone: 'America/La_Paz',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(fecha);
+  const de = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? '';
+
+  return `${de('day')}/${de('month')}/${de('year')} ${de('hour')}:${de('minute')}`;
+}

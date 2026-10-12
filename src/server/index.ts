@@ -46,6 +46,8 @@ export function crearApp(db: DB, opciones: OpcionesDeApp = {}) {
 
   const clientes = moduloClientes(db, {
     puedeVerBajas: (c) => puede(usuarioDe(c), 'clientes.baja'),
+    operadorActual,
+    ahora,
   });
   const membresias = moduloMembresias(db, {
     clientes: clientes.servicio,

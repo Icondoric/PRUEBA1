@@ -29,6 +29,10 @@ import {
 export interface DepsDeClientes {
   /** ¿Quien pide tiene el acceso "Dar de baja y reactivar"? Solo así ve las bajas. */
   puedeVerBajas: (c: Context) => boolean;
+  /** El id de quien inició sesión; queda como quien bloqueó. */
+  operadorActual: (c: Context) => number;
+  /** La hora real, para registrar cuándo se bloqueó. */
+  ahora: () => Date;
 }
 
 export function rutasClientes(servicio: ServicioClientes, deps: DepsDeClientes) {
@@ -69,7 +73,14 @@ export function rutasClientes(servicio: ServicioClientes, deps: DepsDeClientes) 
         zValidator('param', idParamSchema),
         zValidator('json', bloqueoInputSchema),
         (c) =>
-          c.json(servicio.bloquear(c.req.valid('param').id, c.req.valid('json').motivo)),
+          c.json(
+            servicio.bloquear(
+              c.req.valid('param').id,
+              c.req.valid('json').motivo,
+              deps.operadorActual(c),
+              deps.ahora(),
+            ),
+          ),
       )
 
       .delete('/:id/bloqueo', zValidator('param', idParamSchema), (c) =>

@@ -9,7 +9,12 @@
  * necesitan levantar nada ni congelar el reloj.
  */
 
-import { ConflictoError, NoEncontradoError, SinPermisoError } from '@/lib/errors';
+import {
+  ConflictoError,
+  NoEncontradoError,
+  ReglaDeNegocioError,
+  SinPermisoError,
+} from '@/lib/errors';
 import type { FechaISO } from '@/lib/fechas';
 import {
   type DatosNuevoCliente,
@@ -30,6 +35,18 @@ import type {
 export interface ClienteVista extends ClienteFila {
   nombreCompleto: string;
   tipo: TipoCliente;
+  /** Quién lo bloqueó. null si no está bloqueado (o si se bloqueó antes de registrarlo). */
+  bloqueadoPorNombre: string | null;
+}
+
+export interface DatosDeCliente extends DatosNuevoCliente {
+  /** Quién lo trajo, ya resuelto (lo usan los scripts). */
+  referidoPorClienteId?: number | null;
+  /**
+   * Quién lo trajo, como se teclea en el formulario: nº de socio o CI.
+   * Vacío = nadie. Si no viene, al editar no se toca.
+   */
+  referidoPor?: string | null;
 }
 
 export function crearServicioClientes(repo: RepoClientes) {
@@ -38,15 +55,45 @@ export function crearServicioClientes(repo: RepoClientes) {
       ...fila,
       nombreCompleto: nombreCompleto(fila),
       tipo: tipoCliente(repo.membresiasResumen(fila.id)),
+      bloqueadoPorNombre:
+        fila.bloqueado && fila.bloqueadoPor !== null
+          ? repo.nombreDeUsuario(fila.bloqueadoPor)
+          : null,
     };
   }
 
+  /**
+   * De "lo que se tecleó" a un cliente. `undefined` = no vino el dato (al
+   * editar, no se toca); `null` = se dejó vacío a propósito.
+   */
+  function resolverReferido(datos: DatosDeCliente, propioId?: number) {
+    if (datos.referidoPor === undefined || datos.referidoPor === null) {
+      return datos.referidoPorClienteId;
+    }
+
+    const texto = datos.referidoPor.trim();
+    if (!texto) return null;
+
+    const padrino = repo.porIdentificador(normalizarIdentificador(texto));
+    if (!padrino) {
+      throw new ReglaDeNegocioError(
+        `“${texto}” no es un número de socio ni un CI registrado`,
+        { campo: 'referidoPor' },
+      );
+    }
+    if (padrino.id === propioId) {
+      throw new ReglaDeNegocioError('Un cliente no puede referirse a sí mismo', {
+        campo: 'referidoPor',
+      });
+    }
+    return padrino.id;
+  }
+
   return {
-    registrar(
-      datos: DatosNuevoCliente & { referidoPorClienteId?: number | null },
-      hoy: FechaISO,
-    ): ClienteVista {
+    registrar(datos: DatosDeCliente, hoy: FechaISO): ClienteVista {
       const normalizado = prepararAlta(datos);
+      // Antes de guardar nada: si el referido no existe, no se crea el cliente.
+      const referidoPorClienteId = resolverReferido(datos) ?? null;
 
       // Un CI repetido es la forma número uno de duplicar un socio.
       if (normalizado.ci) {
@@ -63,7 +110,7 @@ export function crearServicioClientes(repo: RepoClientes) {
         ...normalizado,
         nroSocio: siguienteNroSocio(repo.maximoNroSocio()),
         fechaRegistro: hoy,
-        referidoPorClienteId: datos.referidoPorClienteId ?? null,
+        referidoPorClienteId,
       });
 
       return decorar(fila);
@@ -98,10 +145,11 @@ export function crearServicioClientes(repo: RepoClientes) {
       };
     },
 
-    actualizar(id: number, datos: DatosNuevoCliente): ClienteVista {
+    actualizar(id: number, datos: DatosDeCliente): ClienteVista {
       if (!repo.porId(id)) throw new NoEncontradoError('el cliente', id);
 
       const normalizado = prepararAlta(datos);
+      const referido = resolverReferido(datos, id);
 
       if (normalizado.ci) {
         const otro = repo.porCi(normalizado.ci, normalizado.ciExtension!);
@@ -113,15 +161,23 @@ export function crearServicioClientes(repo: RepoClientes) {
         }
       }
 
-      const fila = repo.actualizar(id, normalizado);
+      const fila = repo.actualizar(
+        id,
+        referido === undefined
+          ? normalizado
+          : { ...normalizado, referidoPorClienteId: referido },
+      );
       if (!fila) throw new NoEncontradoError('el cliente', id);
       return decorar(fila);
     },
 
-    /** Bloqueo manual: rebota en el check-in aunque tenga la membresía al día. */
-    bloquear(id: number, motivo: string): ClienteVista {
+    /**
+     * Bloqueo manual: rebota en el check-in aunque tenga la membresía al día.
+     * Queda registrado quién lo bloqueó y cuándo.
+     */
+    bloquear(id: number, motivo: string, usuarioId: number, ahora: Date): ClienteVista {
       if (!repo.porId(id)) throw new NoEncontradoError('el cliente', id);
-      repo.bloquear(id, prepararBloqueo(motivo));
+      repo.bloquear(id, prepararBloqueo(motivo), usuarioId, ahora);
       return this.obtener(id);
     },
 

@@ -12,7 +12,7 @@ import PagosDelCliente from '@/web/features/pagos/components/PagosDelCliente.vue
 import { useAccesos } from '@/web/features/sesion/api/sesion.api';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
-import { formatearCi, formatearFecha } from '@/web/shared/lib/formato';
+import { formatearCi, formatearFecha, formatearMomento } from '@/web/shared/lib/formato';
 import { Button } from '@/web/shared/ui/button';
 import { Skeleton } from '@/web/shared/ui/skeleton';
 import { useCliente } from '../api/clientes.api';
@@ -103,6 +103,12 @@ const confirmacion = computed(() => {
           <p class="text-sm font-medium">Acceso bloqueado</p>
           <p class="text-muted-foreground text-sm">
             {{ cliente.motivoBloqueo ?? 'No se registró el motivo.' }}
+          </p>
+          <p v-if="cliente.bloqueadoPorNombre" class="text-muted-foreground text-xs">
+            Lo bloqueó {{ cliente.bloqueadoPorNombre
+            }}<template v-if="cliente.bloqueadoEn">
+              el {{ formatearMomento(cliente.bloqueadoEn) }}</template
+            >.
           </p>
         </div>
       </div>
