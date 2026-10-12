@@ -8,7 +8,9 @@ import { Ban } from '@lucide/vue';
 import type { ClienteVista } from '@/modules/clientes';
 import { Badge } from '@/web/shared/ui/badge';
 
-defineProps<{ cliente: Pick<ClienteVista, 'tipo' | 'bloqueado'> }>();
+defineProps<{
+  cliente: Pick<ClienteVista, 'tipo' | 'bloqueado'> & { activo?: boolean };
+}>();
 </script>
 
 <template>
@@ -20,5 +22,6 @@ defineProps<{ cliente: Pick<ClienteVista, 'tipo' | 'bloqueado'> }>();
       <Ban aria-hidden="true" />
       Bloqueado
     </Badge>
+    <Badge v-if="cliente.activo === false" variant="outline">Dado de baja</Badge>
   </span>
 </template>

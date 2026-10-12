@@ -28,6 +28,8 @@ export type DatosCliente = z.output<typeof clienteInputSchema>;
 export interface FiltrosLista {
   texto?: string;
   tipo?: 'socio' | 'eventual';
+  /** 'baja' = los dados de baja. Pide el acceso "Dar de baja y reactivar". */
+  estado?: 'activos' | 'baja';
   pagina?: number;
   porPagina?: number;
 }
@@ -51,6 +53,7 @@ export function useListaClientes(filtros: MaybeRefOrGetter<FiltrosLista>) {
           query: {
             texto: query.value.texto || undefined,
             tipo: query.value.tipo,
+            estado: query.value.estado === 'baja' ? 'baja' : undefined,
             pagina: String(query.value.pagina ?? 1),
             porPagina: String(query.value.porPagina ?? 25),
           },
@@ -97,6 +100,58 @@ export function useActualizarCliente() {
     // Invalida listas y fichas: el nombre editado aparece en las dos.
     onSuccess: () => qc.invalidateQueries({ queryKey: clavesClientes.todo }),
   });
+}
+
+/**
+ * Las acciones sobre el estado de un cliente: bloquear, desbloquear, dar de
+ * baja y reactivar. Todas refrescan listas y fichas.
+ */
+export function useEstadoDeCliente() {
+  const qc = useQueryClient();
+  const refrescar = () => qc.invalidateQueries({ queryKey: clavesClientes.todo });
+
+  return {
+    bloquear: useMutation({
+      mutationFn: ({ id, motivo }: { id: number; motivo: string }) =>
+        pedir<ClienteVista>(
+          api.clientes[':id'].bloqueo.$put({
+            param: { id: String(id) },
+            json: { motivo },
+          }),
+        ),
+      retry: false,
+      onSuccess: refrescar,
+    }),
+
+    desbloquear: useMutation({
+      mutationFn: (id: number) =>
+        pedir<ClienteVista>(
+          api.clientes[':id'].bloqueo.$delete({ param: { id: String(id) } }),
+        ),
+      retry: false,
+      onSuccess: refrescar,
+    }),
+
+    /** Dar de baja. No borra nada: el cliente queda guardado con su historial. */
+    darDeBaja: useMutation({
+      mutationFn: async (id: number) => {
+        const res = await api.clientes[':id'].$delete({ param: { id: String(id) } });
+        // 204 sin cuerpo si salió bien; si no, `pedir` arma el error de siempre.
+        if (!res.ok) await pedir<never>(Promise.resolve(res));
+      },
+      retry: false,
+      onSuccess: refrescar,
+    }),
+
+    reactivar: useMutation({
+      mutationFn: (id: number) =>
+        pedir<ClienteVista>(
+          api.clientes[':id'].reactivacion.$post({ param: { id: String(id) } }),
+        ),
+      retry: false,
+      onSuccess: refrescar,
+    }),
+  };
 }
 
 /** Búsqueda del check-in y de la venta rápida de pases. */

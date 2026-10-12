@@ -21,7 +21,7 @@ export const CATALOGO_DE_ACCESOS = [
     accesos: [
       { clave: 'clientes.gestionar', nombre: 'Ver, registrar y editar clientes', basico: true },
       { clave: 'clientes.bloquear', nombre: 'Bloquear y desbloquear clientes', basico: false },
-      { clave: 'clientes.baja', nombre: 'Dar de baja clientes', basico: false },
+      { clave: 'clientes.baja', nombre: 'Dar de baja y reactivar clientes', basico: false },
     ],
   },
   {

@@ -20,6 +20,7 @@ import { moduloCheckin } from '@/modules/checkin';
 import { moduloClientes } from '@/modules/clientes';
 import { moduloMembresias } from '@/modules/membresias';
 import { moduloPagos } from '@/modules/pagos';
+import { moduloPlanes } from '@/modules/planes';
 import { moduloReportes } from '@/modules/reportes';
 import { moduloUsuarios, puede } from '@/modules/usuarios';
 import { moduloVisitas } from '@/modules/visitas';
@@ -43,7 +44,9 @@ export function crearApp(db: DB, opciones: OpcionesDeApp = {}) {
   /** Quien inició sesión: queda como autor de lo que registre. */
   const operadorActual = (c: Context) => usuarioDe(c).id;
 
-  const clientes = moduloClientes(db);
+  const clientes = moduloClientes(db, {
+    puedeVerBajas: (c) => puede(usuarioDe(c), 'clientes.baja'),
+  });
   const membresias = moduloMembresias(db, {
     clientes: clientes.servicio,
     operadorActual,
@@ -61,6 +64,7 @@ export function crearApp(db: DB, opciones: OpcionesDeApp = {}) {
   });
   const visitas = moduloVisitas(db, { clientes: clientes.servicio, operadorActual });
   const reportes = moduloReportes(db);
+  const planes = moduloPlanes(db);
 
   const app = new Hono<Entorno>()
     .use('*', logger())
@@ -77,6 +81,7 @@ export function crearApp(db: DB, opciones: OpcionesDeApp = {}) {
     .route('/api/usuarios', rutasDeUsuarios.usuarios)
     .route('/api/clientes', clientes.rutas)
     .route('/api/planes', membresias.rutasPlanes)
+    .route('/api/gestion-planes', planes.rutas)
     .route('/api/membresias', membresias.rutas)
     .route('/api/checkin', checkin.rutas)
     .route('/api/pagos', pagos.rutas)

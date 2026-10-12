@@ -40,6 +40,17 @@ export const passwordInputSchema = z.object({
     .max(300),
 });
 
+export const miPasswordSchema = z.object({
+  actual: z
+    .string({ error: 'Escribí tu contraseña actual' })
+    .min(1, 'Escribí tu contraseña actual')
+    .max(300),
+  nueva: z
+    .string({ error: 'Escribí la contraseña nueva' })
+    .min(1, 'Escribí la contraseña nueva')
+    .max(300),
+});
+
 export const idParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });

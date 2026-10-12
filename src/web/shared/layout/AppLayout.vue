@@ -69,12 +69,16 @@ async function salir() {
         v-if="usuario"
         class="flex shrink-0 items-center gap-2 md:mt-auto md:flex-col md:items-stretch md:border-t md:pt-4"
       >
-        <div class="hidden min-w-0 px-2 md:block">
-          <p class="truncate text-sm font-medium">{{ usuario.nombre }}</p>
-          <p class="text-muted-foreground text-xs">
-            {{ esDueno ? 'Dueño' : 'Recepción' }}
-          </p>
-        </div>
+        <RouterLink
+          :to="{ name: 'mi-cuenta' }"
+          class="hover:bg-accent focus-visible:ring-ring/50 hidden min-w-0 rounded-md px-2 py-1 outline-none focus-visible:ring-3 md:block"
+          active-class="bg-accent"
+        >
+          <span class="block truncate text-sm font-medium">{{ usuario.nombre }}</span>
+          <span class="text-muted-foreground block text-xs">
+            {{ esDueno ? 'Dueño' : 'Recepción' }} · Mi cuenta
+          </span>
+        </RouterLink>
         <button
           type="button"
           class="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex h-9 items-center gap-2 rounded-md px-2 text-sm font-medium whitespace-nowrap outline-none focus-visible:ring-3"

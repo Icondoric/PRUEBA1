@@ -96,6 +96,19 @@ export const router = createRouter({
       meta: { titulo: 'Reportes', permisos: ['reportes.ver'] },
     },
     {
+      path: '/planes',
+      name: 'planes',
+      component: () => import('@/web/features/planes/views/PlanesView.vue'),
+      meta: { titulo: 'Planes y precios', permisos: ['planes.gestionar'] },
+    },
+    {
+      // De cualquiera que haya entrado: no pide ningún acceso.
+      path: '/mi-cuenta',
+      name: 'mi-cuenta',
+      component: () => import('@/web/features/sesion/views/MiCuentaView.vue'),
+      meta: { titulo: 'Mi cuenta' },
+    },
+    {
       path: '/usuarios',
       name: 'usuarios',
       component: () => import('@/web/features/usuarios/views/UsuariosView.vue'),

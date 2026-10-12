@@ -28,6 +28,7 @@ const REGLAS: ReadonlyArray<readonly [Metodo, RegExp, Acceso]> = [
   ['POST', /^\/api\/sesion$/, 'publico'], // entrar
   ['DELETE', /^\/api\/sesion$/, 'publico'], // salir: tiene que andar aunque ya haya vencido
   ['GET', /^\/api\/sesion$/, 'sesion'], // quién soy
+  ['PUT', /^\/api\/sesion\/password$/, 'sesion'], // cambiar mi propia contraseña
 
   // usuarios y accesos
   ['*', /^\/api\/usuarios(\/.*)?$/, 'dueno'],
@@ -36,10 +37,16 @@ const REGLAS: ReadonlyArray<readonly [Metodo, RegExp, Acceso]> = [
   ['GET', /^\/api\/clientes(\/.*)?$/, ['clientes.gestionar', 'membresias.vender', 'checkin.pases', 'pagos.caja_hoy']],
   ['POST', /^\/api\/clientes$/, ['clientes.gestionar']],
   ['PUT', /^\/api\/clientes\/\d+$/, ['clientes.gestionar']],
+  ['PUT', /^\/api\/clientes\/\d+\/bloqueo$/, ['clientes.bloquear']],
+  ['DELETE', /^\/api\/clientes\/\d+\/bloqueo$/, ['clientes.bloquear']],
+  // Dar de baja y reactivar. Es del dueño, que se lo puede dar a alguien.
+  // No borra nada: el cliente queda guardado con su historial.
   ['DELETE', /^\/api\/clientes\/\d+$/, ['clientes.baja']],
+  ['POST', /^\/api\/clientes\/\d+\/reactivacion$/, ['clientes.baja']],
 
   // planes y membresías
   ['GET', /^\/api\/planes$/, ['membresias.vender', 'planes.gestionar', 'checkin.pases']],
+  ['*', /^\/api\/gestion-planes(\/.*)?$/, ['planes.gestionar']],
   ['GET', /^\/api\/membresias$/, ['clientes.gestionar', 'membresias.vender']],
   ['GET', /^\/api\/membresias\/cotizacion$/, ['membresias.vender']],
   ['POST', /^\/api\/membresias$/, ['membresias.vender']],

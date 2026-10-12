@@ -164,6 +164,10 @@ Decidido con el usuario (2026-10-11):
   `src/modules/usuarios/domain/permisos.ts`: toda función nueva que no sea
   para todos agrega ahí su acceso.
 - **Solo el dueño administra usuarios y accesos.** Eso no se delega.
+- **Dar de baja (y reactivar) a un cliente: del dueño por defecto**, y es
+  un acceso que puede darle a quien quiera, como los demás. Lo que no cambia:
+  dar de baja NUNCA borra. El cliente queda guardado con todo su historial,
+  por auditoría.
 - **La sesión se cierra tras 8 horas sin uso** (`GYM_SESION_HORAS`). Puede
   cambiar más adelante.
 - **La cuenta del dueño se crea con `pnpm usuarios:dueno`**, no desde el
@@ -190,6 +194,18 @@ Decidido con el usuario (2026-10-11):
   el hash de la contraseña y el hash del token de sesión, nunca los originales.
 
 Si una pantalla nueva no queda claro de qué rol o acceso es, preguntá.
+
+## Formularios: los errores del servidor van aparte
+
+Un error de campo que devuelve el servidor ("ese CI ya es de otro") NO se pone
+con `setFieldError` de vee-validate: al saltar el foco, vee-validate vuelve a
+pasar el esquema y lo borra. Se usa `useErroresDelServidor(values)` de
+`src/web/shared/lib/validacion.ts`, y en la plantilla
+`:error="errors.ci ?? delServidor.ci"`.
+
+Y un `<dialog>` cuyo contenido aparece después de abrirse (porque espera un
+dato, o porque tiene un segundo paso) no respeta `autofocus`: el foco se pone
+a mano con `nextTick` + `focus()`. Si no, Enter no hace nada.
 
 ## Documentación para la guía de usuario
 

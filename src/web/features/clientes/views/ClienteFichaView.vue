@@ -17,6 +17,7 @@ import { Button } from '@/web/shared/ui/button';
 import { Skeleton } from '@/web/shared/ui/skeleton';
 import { useCliente } from '../api/clientes.api';
 import ClienteEtiquetas from '../components/ClienteEtiquetas.vue';
+import EstadoDelCliente from '../components/EstadoDelCliente.vue';
 
 const route = useRoute();
 const { puede } = useAccesos();
@@ -157,6 +158,8 @@ const confirmacion = computed(() => {
         v-if="puede('clientes.gestionar') || puede('pagos.caja_hoy')"
         :cliente-id="cliente.id"
       />
+
+      <EstadoDelCliente :cliente="cliente" />
     </template>
 
     <template v-else>

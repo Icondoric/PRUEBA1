@@ -21,6 +21,7 @@ export {
 } from './domain/permisos';
 export {
   loginInputSchema,
+  miPasswordSchema,
   passwordInputSchema,
   usuarioNuevoSchema,
 } from './http/schemas';

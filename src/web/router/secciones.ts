@@ -5,7 +5,15 @@
  * `permisos`: alcanza con tener uno. `soloDueno`: no se delega.
  */
 
-import { Banknote, ChartColumn, ScanLine, Ticket, UserCog, Users } from '@lucide/vue';
+import {
+  Banknote,
+  ChartColumn,
+  ScanLine,
+  Tags,
+  Ticket,
+  UserCog,
+  Users,
+} from '@lucide/vue';
 import type { Component } from 'vue';
 import type { UsuarioSesion } from '@/modules/usuarios';
 import { type Permiso, esDueno, puedeAlguno } from '@/modules/usuarios/contrato';
@@ -44,6 +52,7 @@ export const SECCIONES: readonly Seccion[] = [
     icono: ChartColumn,
     permisos: ['reportes.ver'],
   },
+  { ruta: 'planes', etiqueta: 'Planes', icono: Tags, permisos: ['planes.gestionar'] },
   { ruta: 'usuarios', etiqueta: 'Usuarios', icono: UserCog, soloDueno: true },
 ];
 

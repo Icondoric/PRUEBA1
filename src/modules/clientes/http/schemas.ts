@@ -23,8 +23,19 @@ export const clienteInputSchema = z.object({
 export const listarQuerySchema = z.object({
   texto: z.string().optional(),
   tipo: z.enum(['socio', 'eventual']).optional(),
+  /** 'baja' = los dados de baja (pide el acceso de baja). Por defecto, los activos. */
+  estado: z.enum(['activos', 'baja']).optional(),
   pagina: z.coerce.number().int().min(1).default(1),
   porPagina: z.coerce.number().int().min(1).max(100).default(25),
+});
+
+/** Lo importa también el diálogo de bloqueo. */
+export const bloqueoInputSchema = z.object({
+  motivo: z
+    .string({ error: 'Escribí por qué se lo bloquea' })
+    .trim()
+    .min(1, 'Escribí por qué se lo bloquea')
+    .max(300, 'El motivo no puede pasar de 300 caracteres'),
 });
 
 export const idParamSchema = z.object({

@@ -60,20 +60,25 @@ const filtros = computed(() => {
   return {
     texto: deLaUrl(route.query.texto),
     tipo: esTipo(tipo) ? tipo : undefined,
+    // Los dados de baja los ve quien tiene el acceso para reactivarlos.
+    estado: route.query.estado === 'baja' ? ('baja' as const) : undefined,
     pagina: Number.isInteger(pagina) && pagina > 0 ? pagina : 1,
     porPagina: POR_PAGINA,
   };
 });
 
 const hayFiltros = computed(
-  () => filtros.value.texto !== '' || filtros.value.tipo !== undefined,
+  () =>
+    filtros.value.texto !== '' ||
+    filtros.value.tipo !== undefined ||
+    filtros.value.estado !== undefined,
 );
 
 const { data, error, isPending, isFetching, isPlaceholderData, refetch } =
   useListaClientes(filtros);
 
 function irA(
-  cambios: { texto?: string; tipo?: string; pagina?: number },
+  cambios: { texto?: string; tipo?: string; estado?: string; pagina?: number },
   modo: 'push' | 'replace',
 ) {
   const nuevo = { ...filtros.value, ...cambios };
@@ -81,6 +86,7 @@ function irA(
     query: {
       texto: nuevo.texto || undefined,
       tipo: esTipo(nuevo.tipo) ? nuevo.tipo : undefined,
+      estado: nuevo.estado === 'baja' ? 'baja' : undefined,
       pagina: nuevo.pagina > 1 ? String(nuevo.pagina) : undefined,
     },
   });
@@ -107,7 +113,7 @@ watch(
 
 function quitarFiltros() {
   textoBusqueda.value = '';
-  irA({ texto: '', tipo: undefined, pagina: 1 }, 'push');
+  irA({ texto: '', tipo: undefined, estado: undefined, pagina: 1 }, 'push');
 }
 
 // El esqueleto aparece solo si la carga tarda: contra localhost casi nunca, y
@@ -180,6 +186,22 @@ const descripcionFiltros = computed(() => {
             <SelectItem value="todos">Todos</SelectItem>
             <SelectItem value="socio">Socios</SelectItem>
             <SelectItem value="eventual">Eventuales</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div v-if="puede('clientes.baja')" class="space-y-1.5">
+        <Label for="filtro-estado">Estado</Label>
+        <Select
+          :model-value="filtros.estado ?? 'activos'"
+          @update:model-value="irA({ estado: String($event), pagina: 1 }, 'push')"
+        >
+          <SelectTrigger id="filtro-estado" class="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="activos">Activos</SelectItem>
+            <SelectItem value="baja">Dados de baja</SelectItem>
           </SelectContent>
         </Select>
       </div>

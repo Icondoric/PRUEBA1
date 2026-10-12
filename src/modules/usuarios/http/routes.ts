@@ -14,6 +14,7 @@ import type { ServicioUsuarios, UsuarioSesion } from '../application/usuarios.se
 import {
   idParamSchema,
   loginInputSchema,
+  miPasswordSchema,
   passwordInputSchema,
   usuarioCambiosSchema,
   usuarioNuevoSchema,
@@ -54,6 +55,13 @@ export function rutasSesion(servicio: ServicioUsuarios, deps: DepsDeRutas) {
     })
 
     .get('/', (c) => c.json({ usuario: deps.usuarioActual(c) }))
+
+    .put('/password', zValidator('json', miPasswordSchema), (c) => {
+      servicio.cambiarMiPassword(deps.usuarioActual(c).id, c.req.valid('json'));
+      // Se cerraron todas sus sesiones, también esta.
+      deleteCookie(c, COOKIE_SESION, { path: '/' });
+      return c.body(null, 204);
+    })
 
     .delete('/', (c) => {
       servicio.cerrarSesion(getCookie(c, COOKIE_SESION));

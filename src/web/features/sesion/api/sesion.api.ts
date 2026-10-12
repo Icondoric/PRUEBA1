@@ -13,6 +13,7 @@ import type { UsuarioSesion } from '@/modules/usuarios';
 import {
   type Permiso,
   type loginInputSchema,
+  type miPasswordSchema,
   puede as puedeUsuario,
 } from '@/modules/usuarios/contrato';
 import { ErrorDeApi, api, pedir } from '@/web/shared/lib/api';
@@ -62,6 +63,24 @@ export function useIniciarSesion() {
       // Lo que hubiera en memoria era de otra persona (o de nadie).
       queryClient.clear();
       queryClient.setQueryData(claveSesion, usuario);
+    },
+  });
+}
+
+/**
+ * Cambiar la propia contraseña. Al salir bien, el servidor cierra todas las
+ * sesiones de la cuenta (también esta): hay que volver a entrar.
+ */
+export function useCambiarMiPassword() {
+  return useMutation({
+    mutationFn: async (datos: z.output<typeof miPasswordSchema>) => {
+      const res = await api.sesion.password.$put({ json: datos });
+      if (!res.ok) await pedir<never>(Promise.resolve(res));
+    },
+    retry: false,
+    onSuccess: () => {
+      queryClient.clear();
+      queryClient.setQueryData(claveSesion, null);
     },
   });
 }

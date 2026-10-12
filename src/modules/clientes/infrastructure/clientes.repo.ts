@@ -20,6 +20,8 @@ export interface FiltroBusqueda {
   texto?: string;
   /** 'socio' | 'eventual' | undefined (todos) */
   tipo?: 'socio' | 'eventual';
+  /** true = solo los dados de baja. Por defecto, solo los activos. */
+  deBaja?: boolean;
   pagina: number;
   porPagina: number;
 }
@@ -59,7 +61,10 @@ export function crearRepoClientes(db: DB) {
     },
 
     maximoNroSocio(): number | null {
-      const fila = db.select({ max: max(clientes.nroSocio) }).from(clientes).get();
+      const fila = db
+        .select({ max: max(clientes.nroSocio) })
+        .from(clientes)
+        .get();
       return fila?.max ?? null;
     },
 
@@ -73,13 +78,37 @@ export function crearRepoClientes(db: DB) {
       return db.insert(clientes).values(datos).returning().get();
     },
 
-    actualizar(id: number, cambios: Partial<ClienteNormalizado>): ClienteFila | undefined {
+    actualizar(
+      id: number,
+      cambios: Partial<ClienteNormalizado>,
+    ): ClienteFila | undefined {
       return db
         .update(clientes)
         .set({ ...cambios, updatedAt: new Date() })
         .where(eq(clientes.id, id))
         .returning()
         .get();
+    },
+
+    bloquear(id: number, motivo: string): void {
+      db.update(clientes)
+        .set({ bloqueado: true, motivoBloqueo: motivo, updatedAt: new Date() })
+        .where(eq(clientes.id, id))
+        .run();
+    },
+
+    desbloquear(id: number): void {
+      db.update(clientes)
+        .set({ bloqueado: false, motivoBloqueo: null, updatedAt: new Date() })
+        .where(eq(clientes.id, id))
+        .run();
+    },
+
+    reactivar(id: number): void {
+      db.update(clientes)
+        .set({ activo: true, updatedAt: new Date() })
+        .where(eq(clientes.id, id))
+        .run();
     },
 
     /** Soft delete. Los clientes nunca se borran. */
@@ -102,7 +131,7 @@ export function crearRepoClientes(db: DB) {
           AND ${planes.esPaseDiario} = 0
       )`;
 
-      const condiciones = [eq(clientes.activo, true)];
+      const condiciones = [eq(clientes.activo, !f.deBaja)];
 
       if (f.texto?.trim()) {
         const patron = `%${f.texto.trim()}%`;

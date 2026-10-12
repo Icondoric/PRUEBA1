@@ -121,7 +121,11 @@ describe('GET /api/clientes (listado)', () => {
 
   it('distingue socio de eventual derivándolo del historial', async () => {
     // A Ana le vendemos una mensualidad; los otros dos quedan eventuales.
-    const mensual = db.select().from(planes).all().find((p) => !p.esPaseDiario)!;
+    const mensual = db
+      .select()
+      .from(planes)
+      .all()
+      .find((p) => !p.esPaseDiario)!;
     db.insert(membresias)
       .values({
         clienteId: 1,

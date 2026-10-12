@@ -15,7 +15,7 @@ import { useAccesos } from '@/web/features/sesion/api/sesion.api';
 import CampoFormulario from '@/web/shared/components/CampoFormulario.vue';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
-import { esquemaDeFormulario } from '@/web/shared/lib/validacion';
+import { esquemaDeFormulario, useErroresDelServidor } from '@/web/shared/lib/validacion';
 import { Badge } from '@/web/shared/ui/badge';
 import { Button } from '@/web/shared/ui/button';
 import { Input } from '@/web/shared/ui/input';
@@ -73,10 +73,12 @@ const CAMPOS = ['nombre', 'usuario', 'password'] as const;
 type Campo = (typeof CAMPOS)[number];
 const esCampo = (valor: unknown): valor is Campo => CAMPOS.some((c) => c === valor);
 
-const { handleSubmit, defineField, errors, setFieldError } = useForm({
+const { handleSubmit, defineField, errors, values } = useForm({
   validationSchema: esquemaDeFormulario(usuarioNuevoSchema),
   initialValues: { usuario: '', nombre: '', password: '' },
 });
+// Los errores que devuelve el servidor van aparte: ver useErroresDelServidor.
+const { delServidor, ponerError } = useErroresDelServidor(values);
 const alSalir = (estado: { errors: string[] }) => ({
   validateOnBlur: true,
   validateOnModelUpdate: estado.errors.length > 0,
@@ -99,7 +101,7 @@ const crearUsuario = handleSubmit(
     } catch (error) {
       const campo = error instanceof ErrorDeApi ? error.detalles.campo : null;
       if (error instanceof ErrorDeApi && esCampo(campo)) {
-        setFieldError(campo, error.message);
+        ponerError(campo, error.message);
         void enfocar(`usuario-${campo}`);
       } else {
         avisoCrear.value = mensajeDe(error);
@@ -214,7 +216,7 @@ async function cambiarEstado(activo: boolean) {
           id="usuario-nombre"
           v-slot="{ control }"
           etiqueta="Nombre y apellido"
-          :error="errors.nombre"
+          :error="errors.nombre ?? delServidor.nombre"
           class="sm:col-span-2"
         >
           <Input
@@ -229,7 +231,7 @@ async function cambiarEstado(activo: boolean) {
           v-slot="{ control }"
           etiqueta="Usuario"
           ayuda="Con lo que va a entrar. Sin espacios; por ejemplo: ana.quispe"
-          :error="errors.usuario"
+          :error="errors.usuario ?? delServidor.usuario"
         >
           <Input
             v-bind="{ ...control, ...usuarioNuevoAttrs }"
@@ -245,7 +247,7 @@ async function cambiarEstado(activo: boolean) {
           v-slot="{ control }"
           etiqueta="Contraseña"
           ayuda="8 caracteres o más. Después puede pedirte que se la cambies."
-          :error="errors.password"
+          :error="errors.password ?? delServidor.password"
         >
           <Input
             v-bind="{ ...control, ...passwordNuevaAttrs }"

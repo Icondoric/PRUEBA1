@@ -71,3 +71,28 @@ export function formatearDiaMes(fecha: string): string {
   const [, mes, dia] = fecha.split('-');
   return mes && dia ? `${dia}/${mes}` : fecha;
 }
+
+/**
+ * Lo que alguien teclea como precio → centavos enteros. `null` si no se
+ * entiende.
+ *
+ * Acepta '200', '200,5' y '200.50'. NO acepta separador de miles ('1.900'):
+ * no hay forma de saber si es mil novecientos o uno coma nueve, y con plata no
+ * se adivina. La cuenta se hace con texto, sin pasar por decimales.
+ */
+export function aCentavos(texto: string): number | null {
+  const limpio = texto.trim().replace(/^Bs\s*/i, '');
+  const partes = /^(\d{1,7})(?:[.,](\d{1,2}))?$/.exec(limpio);
+  if (!partes) return null;
+
+  const enteros = Number(partes[1]);
+  const decimales = Number((partes[2] ?? '').padEnd(2, '0'));
+  return enteros * 100 + decimales;
+}
+
+/** Centavos → lo que se muestra dentro de un campo de precio: '200' o '200,50'. */
+export function centavosParaCampo(centavos: number): string {
+  const resto = centavos % 100;
+  const enteros = Math.trunc(centavos / 100);
+  return resto === 0 ? String(enteros) : `${enteros},${String(resto).padStart(2, '0')}`;
+}

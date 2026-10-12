@@ -140,6 +140,22 @@ Son copias en el repo: se editan acá.
 | `views/UsuarioFormView.vue` | Las cuatro secciones (datos, accesos, contraseña, desactivar) y sus separadores. |
 | `components/AccesosPorModulo.vue` | Las casillas son `<input type="checkbox">` nativos dentro de `fieldset`: falta un componente propio de casilla (el mismo que necesita la venta de membresías). Cuidar que se lea fácil: es la pantalla donde el dueño decide quién puede qué. |
 
+### Planes y precios (`src/web/features/planes/`)
+
+| Archivo | Qué ajustar |
+|---|---|
+| `views/PlanesView.vue` | La tarjeta de cada plan: el "se cobra hoy" grande, la fila de botones (son cuatro por plan: evaluar un menú), el historial de precios. |
+| `components/PrecioDialog.vue` | Diálogo en dos pasos (escribir, revisar). El paso de revisión es el momento más importante de la pantalla: que el precio que se va a cobrar se lea sin esfuerzo. |
+| `components/PlanDialog.vue` | Crear plan / cambiar nombre. Tiene otra casilla nativa. |
+
+### Estado del cliente y cuenta propia
+
+| Archivo | Qué ajustar |
+|---|---|
+| `clientes/components/EstadoDelCliente.vue` | Sección "Acceso y estado" al pie de la ficha, con el diálogo de bloqueo. Que "dar de baja" se vea como algo serio sin asustar: no borra nada. |
+| `shared/components/ConfirmarDialog.vue` | El diálogo de confirmación que usan baja de cliente, baja de plan y quitar precio. Unificar con los demás `<dialog>` en un componente base. |
+| `sesion/views/MiCuentaView.vue` | Formulario de cambio de contraseña. |
+
 ### Otras piezas nuevas
 
 - `layout/AppLayout.vue`: el bloque de abajo con el nombre de quien está

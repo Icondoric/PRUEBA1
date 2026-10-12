@@ -9,7 +9,7 @@ Describe lo que el sistema hace desde el punto de vista de quien lo usa
 sesión. Solo se documenta lo que ya funciona y fue probado; lo que falta va en
 la última sección. Si una pantalla cambia, se corrige acá.
 
-**Última actualización:** rebanada 6 (usuarios, contraseñas y accesos).
+**Última actualización:** rebanada 7 (planes y precios, bloqueo, baja de clientes, mi cuenta).
 
 ---
 
@@ -50,6 +50,9 @@ Cada persona tiene su propio usuario; no se comparten.
   el sistema. Hay que cerrarla al terminar el turno.
 - Quien olvida su contraseña se la pide al dueño, que le pone una nueva desde
   "Usuarios".
+- **Mi cuenta:** haciendo clic en el propio nombre, abajo en el menú. Desde
+  ahí cada uno cambia su contraseña: pide la actual y la nueva. Al cambiarla
+  se cierra la sesión y hay que entrar con la nueva.
 
 En el menú aparecen solo las secciones a las que cada uno tiene acceso.
 
@@ -109,10 +112,33 @@ Muestra el nombre, si es socio o eventual, sus datos y su membresía.
 
 - **Editar datos:** cambia nombre, apellido, CI, extensión y teléfono.
 - **Acceso bloqueado:** si el cliente está bloqueado, se ve un aviso con el
-  motivo. Hoy el bloqueo no se puede poner ni quitar desde la pantalla.
+  motivo.
 - **Referido por:** si alguien lo trajo, aparece quién, con enlace a su ficha.
 - **Pagos:** al final de la ficha está todo lo que pagó, y desde ahí se puede
   anular un pago (ver la sección de Pagos).
+
+### 4.4 Bloquear a un cliente
+
+Al pie de la ficha, en "Acceso y estado". Lo ve quien tiene el acceso
+"Bloquear y desbloquear clientes".
+
+- **Bloquear cliente** pide el motivo, que es obligatorio. Desde ese momento
+  el check-in lo rechaza aunque tenga la membresía al día.
+- No toca su membresía ni sus pagos: los días siguen corriendo.
+- **Desbloquear cliente** lo deja entrar de nuevo y borra el motivo.
+
+### 4.5 Dar de baja a un cliente
+
+También al pie de la ficha. Lo puede hacer el dueño y quien tenga el acceso
+"Dar de baja y reactivar clientes", que no viene con recepción: lo da el dueño.
+
+- **Dar de baja no borra nada.** El cliente queda guardado con su número de
+  socio y todo su historial de membresías, pagos e ingresos. Lo que cambia es
+  que deja de aparecer en las listas y en los reportes, y no puede entrar.
+- Pide confirmación antes de hacerlo.
+- **Para encontrarlo después:** en la lista de clientes, el filtro
+  **Estado → Dados de baja** (lo ve quien tiene ese mismo acceso).
+- **Reactivar cliente**, desde su ficha, lo devuelve como estaba.
 
 ## 5. Membresías
 
@@ -168,8 +194,8 @@ no puede entrar.
   lo ya vendido no cambia.
 - Una promoción es un precio con fecha de inicio y de fin. Mientras está
   vigente, se aplica sola.
-- Hoy los planes, precios y promociones **no se pueden cargar ni cambiar desde
-  la pantalla**.
+- Los planes, precios y promociones se administran desde la pantalla
+  "Planes" (ver esa sección).
 
 ## 6. Check-in (la pantalla de ingreso)
 
@@ -298,6 +324,39 @@ Cómo se cuentan las cosas:
 **Exportar a CSV:** cada lista tiene su botón. El archivo se abre en Excel con
 doble clic, con los montos listos para sumar.
 
+## 9.5 Planes y precios
+
+Menú **Planes**. Lo ve el dueño y quien tenga el acceso "Planes y precios".
+
+Cada plan muestra cuánto dura, **cuánto se cobra hoy** y el historial de sus
+precios.
+
+**Cambiar precio.** Se escribe el precio nuevo y desde qué fecha rige (hoy o
+más adelante). El precio anterior **no se borra ni se modifica**: queda en el
+historial, y lo que ya se vendió sigue como estaba.
+
+**Cargar promoción.** Precio, desde cuándo, hasta cuándo y un nombre (es lo
+que se ve al cobrar). Mientras dure se cobra ese precio; al terminar vuelve
+solo el precio habitual.
+
+**Siempre en dos pasos.** Después de escribir, el sistema muestra qué se va a
+cobrar con ese cambio (hoy, y el día que empieza a regir). Recién ahí se
+guarda. Enter confirma.
+
+- El precio se escribe sin puntos de miles: `1900` o `1900,50`.
+- No se puede cargar un precio con fecha pasada.
+- **Quitar un precio** solo es posible si todavía no empezó a regir y nadie
+  compró con él. Es para deshacer un error de carga. Si ya rige, se corrige
+  cargando otro precio encima.
+
+**Crear plan.** Nombre, duración en días y precio. Un pase por sesión dura
+siempre 1 día. **La duración no se puede cambiar después:** si un plan pasa a
+durar distinto, se crea otro y se da de baja el viejo.
+
+**Cambiar nombre** y **Dar de baja plan.** Un plan dado de baja deja de
+aparecer al vender, pero no se borra: quienes lo compraron lo conservan. Se
+puede volver a ofrecer.
+
 ## 10. Usuarios y accesos (solo para el dueño)
 
 Menú **Usuarios**. Solo lo ve el dueño, y eso no se puede delegar.
@@ -311,7 +370,7 @@ con casillas agrupadas por módulo:
 |---|---|---|
 | Clientes | Ver, registrar y editar clientes | Sí |
 | | Bloquear y desbloquear clientes | No |
-| | Dar de baja clientes | No |
+| | Dar de baja y reactivar clientes | No |
 | Membresías | Vender y renovar membresías | Sí |
 | Check-in | Usar la pantalla de check-in | Sí |
 | | Vender pases por sesión | Sí |
@@ -326,8 +385,8 @@ Lo que cada uno no tiene, no lo ve: ni la sección en el menú ni el botón. Por
 ejemplo, quien no puede anular pagos no ve "Anular pago", y quien solo puede
 ver lo cobrado hoy no tiene los filtros de fecha en Pagos.
 
-Los accesos de "Bloquear", "Dar de baja" y "Planes y precios" ya se pueden dar,
-pero las pantallas para hacer esas tres cosas todavía no existen.
+Lo único que es solo del dueño y no aparece entre las casillas es administrar
+usuarios y accesos.
 
 ### 10.2 Crear un usuario
 
@@ -392,6 +451,14 @@ puede salir dañada.
 | Ese pago ya estaba anulado | No hay nada que hacer: ya está anulado. |
 | Indicá a qué socio acompaña | Para un acompañante hay que poner quién lo trae. |
 | “…” no es un número de socio ni un CI registrado | Revisar el número de quien invita. |
+| Escribí por qué se lo bloquea | El motivo del bloqueo es obligatorio. |
+| Tu usuario no puede ver a los clientes dados de baja | Hace falta el acceso "Dar de baja y reactivar"; lo da el dueño. |
+| Escribí el precio sin puntos de miles: 1900 o 1900,50 | Sacar el punto de miles. |
+| La fecha desde la que rige no puede ser anterior a hoy | Un precio rige desde hoy o más adelante. |
+| Una promoción necesita fecha de fin / Ponele un nombre a la promoción | Completar esos datos. |
+| Ese precio ya empezó a regir o ya se vendió con él: no se puede quitar | Cargar otro precio encima para corregirlo. |
+| Un pase por sesión dura 1 día | Si dura más, es un plan, no un pase. |
+| La contraseña actual no es esa | Revisar la contraseña con la que se entró. |
 | Usuario o contraseña incorrectos | Revisar las dos cosas. El mensaje es el mismo si el usuario no existe o está desactivado. |
 | Demasiados intentos seguidos. Esperá … segundos | Esperar y volver a probar con calma. |
 | Tu sesión se cerró por inactividad | Volver a ingresar. |
@@ -416,11 +483,12 @@ Se va tachando a medida que se construye.
 - [x] Usuarios, contraseñas y accesos por módulo
 - [ ] Probar el acceso desde el celular del dueño por Tailscale (ya se puede
       configurar; ver `docs/INSTALACION.md`)
-- [ ] Que cada uno pueda cambiar su propia contraseña (hoy la cambia el dueño)
+- [x] Que cada uno pueda cambiar su propia contraseña
 - [ ] Resumen diario al dueño
-- [ ] Cargar y cambiar planes, precios y promociones desde la pantalla
-- [ ] Bloquear y desbloquear un cliente desde la pantalla
-- [ ] Dar de baja un cliente desde la pantalla
+- [x] Cargar y cambiar planes, precios y promociones desde la pantalla
+- [x] Bloquear y desbloquear un cliente desde la pantalla
+- [ ] Registrar quién bloqueó a un cliente y cuándo (hoy solo queda el motivo)
+- [x] Dar de baja y reactivar un cliente desde la pantalla
 - [ ] Fotos de los clientes
 - [ ] Indicar quién refirió a un cliente al registrarlo
 - [ ] El aspecto visual definitivo (ver `docs/PASADA-VISUAL.md`)

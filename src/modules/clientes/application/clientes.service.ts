@@ -9,7 +9,7 @@
  * necesitan levantar nada ni congelar el reloj.
  */
 
-import { ConflictoError, NoEncontradoError } from '@/lib/errors';
+import { ConflictoError, NoEncontradoError, SinPermisoError } from '@/lib/errors';
 import type { FechaISO } from '@/lib/fechas';
 import {
   type DatosNuevoCliente,
@@ -20,6 +20,7 @@ import {
   siguienteNroSocio,
   tipoCliente,
 } from '../domain/cliente';
+import { prepararBloqueo } from '../domain/bloqueo';
 import type {
   ClienteFila,
   FiltroBusqueda,
@@ -80,7 +81,13 @@ export function crearServicioClientes(repo: RepoClientes) {
       return fila ? decorar(fila) : null;
     },
 
-    listar(filtro: FiltroBusqueda) {
+    /**
+     * @param puedeVerBajas los dados de baja los ve quien puede reactivarlos.
+     */
+    listar(filtro: FiltroBusqueda, puedeVerBajas = false) {
+      if (filtro.deBaja && !puedeVerBajas) {
+        throw new SinPermisoError('Tu usuario no puede ver a los clientes dados de baja');
+      }
       const { filas, total } = repo.buscar(filtro);
       return {
         clientes: filas.map(decorar),
@@ -111,6 +118,30 @@ export function crearServicioClientes(repo: RepoClientes) {
       return decorar(fila);
     },
 
+    /** Bloqueo manual: rebota en el check-in aunque tenga la membresía al día. */
+    bloquear(id: number, motivo: string): ClienteVista {
+      if (!repo.porId(id)) throw new NoEncontradoError('el cliente', id);
+      repo.bloquear(id, prepararBloqueo(motivo));
+      return this.obtener(id);
+    },
+
+    desbloquear(id: number): ClienteVista {
+      if (!repo.porId(id)) throw new NoEncontradoError('el cliente', id);
+      repo.desbloquear(id);
+      return this.obtener(id);
+    },
+
+    /** Deshace una baja. El cliente vuelve con todo su historial. */
+    reactivar(id: number): ClienteVista {
+      if (!repo.porId(id)) throw new NoEncontradoError('el cliente', id);
+      repo.reactivar(id);
+      return this.obtener(id);
+    },
+
+    /**
+     * Dar de baja. NO borra nada: el cliente y todo su historial quedan
+     * guardados; deja de aparecer en las listas y no puede entrar.
+     */
     desactivar(id: number): void {
       if (!repo.porId(id)) throw new NoEncontradoError('el cliente', id);
       repo.desactivar(id);

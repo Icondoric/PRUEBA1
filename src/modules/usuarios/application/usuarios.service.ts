@@ -174,6 +174,27 @@ export function crearServicioUsuarios(
       if (sesion) repo.borrarSesion(sesion.id);
     },
 
+    /**
+     * Cada uno cambia su propia contraseña. Pide la actual: una sesión abierta
+     * y olvidada en la PC de recepción no alcanza para quedarse con la cuenta.
+     * Cierra todas las sesiones de esa cuenta, también la de quien la cambió.
+     */
+    cambiarMiPassword(
+      usuarioId: number,
+      entrada: { actual: string; nueva: string },
+    ): void {
+      const fila = buscar(usuarioId);
+      if (!passwordCoincide(entrada.actual, fila.passwordHash)) {
+        throw new ReglaDeNegocioError('La contraseña actual no es esa', {
+          campo: 'actual',
+        });
+      }
+      repo.actualizar(usuarioId, {
+        passwordHash: hashearPassword(validarPassword(entrada.nueva)),
+      });
+      repo.borrarSesionesDe(usuarioId);
+    },
+
     // ── lo que administra el dueño ──────────────────────────────────────────
 
     catalogo() {

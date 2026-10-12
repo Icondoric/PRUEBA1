@@ -12,7 +12,7 @@ import CampoFormulario from '@/web/shared/components/CampoFormulario.vue';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
 import { formatearFecha, plural } from '@/web/shared/lib/formato';
-import { esquemaDeFormulario } from '@/web/shared/lib/validacion';
+import { esquemaDeFormulario, useErroresDelServidor } from '@/web/shared/lib/validacion';
 import { Button } from '@/web/shared/ui/button';
 import { Input } from '@/web/shared/ui/input';
 import {
@@ -48,7 +48,7 @@ const esMotivo = (valor: unknown): valor is MotivoVisita =>
 const { data, error, isFetching, refetch } = useVisitas();
 const registrar = useRegistrarVisita();
 
-const { handleSubmit, defineField, errors, setFieldError, resetForm } = useForm({
+const { handleSubmit, defineField, errors, values, resetForm } = useForm({
   validationSchema: esquemaDeFormulario(visitaInputSchema),
   initialValues: {
     nombre: '',
@@ -58,6 +58,8 @@ const { handleSubmit, defineField, errors, setFieldError, resetForm } = useForm(
     nota: '',
   },
 });
+// Los errores que devuelve el servidor van aparte: ver useErroresDelServidor.
+const { delServidor, ponerError } = useErroresDelServidor(values);
 
 const alSalir = (estado: { errors: string[] }) => ({
   validateOnBlur: true,
@@ -98,7 +100,7 @@ const guardar = handleSubmit(
     } catch (error) {
       const campo = error instanceof ErrorDeApi ? error.detalles.campo : null;
       if (error instanceof ErrorDeApi && esCampo(campo)) {
-        setFieldError(campo, error.message);
+        ponerError(campo, error.message);
         void enfocar(campo);
       } else {
         aviso.value =
@@ -137,7 +139,7 @@ const guardar = handleSubmit(
             id="visita-nombre"
             v-slot="{ control }"
             etiqueta="Nombre"
-            :error="errors.nombre"
+            :error="errors.nombre ?? delServidor.nombre"
           >
             <Input
               v-bind="{ ...control, ...nombreAttrs }"
@@ -151,7 +153,7 @@ const guardar = handleSubmit(
             id="visita-motivo"
             v-slot="{ control }"
             etiqueta="Motivo"
-            :error="errors.motivo"
+            :error="errors.motivo ?? delServidor.motivo"
           >
             <Select :model-value="motivo" @update:model-value="elegirMotivo">
               <SelectTrigger v-bind="control" class="w-full">
@@ -175,7 +177,7 @@ const guardar = handleSubmit(
             etiqueta="Invitado por"
             :opcional="motivo !== 'acompanante'"
             ayuda="Número de socio o CI de quien lo trae."
-            :error="errors.invitadoPor"
+            :error="errors.invitadoPor ?? delServidor.invitadoPor"
           >
             <Input
               v-bind="{ ...control, ...invitadoPorAttrs }"
@@ -191,7 +193,7 @@ const guardar = handleSubmit(
             v-slot="{ control }"
             etiqueta="Teléfono"
             opcional
-            :error="errors.telefono"
+            :error="errors.telefono ?? delServidor.telefono"
           >
             <Input
               v-bind="{ ...control, ...telefonoAttrs }"
@@ -208,7 +210,7 @@ const guardar = handleSubmit(
             v-slot="{ control }"
             etiqueta="Nota"
             opcional
-            :error="errors.nota"
+            :error="errors.nota ?? delServidor.nota"
             class="sm:col-span-2"
           >
             <Input

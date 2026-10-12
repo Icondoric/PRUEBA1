@@ -36,8 +36,8 @@ describe('catálogo de accesos', () => {
     expect(PERMISOS_BASICOS).not.toContain('pagos.otras_fechas');
     expect(PERMISOS_BASICOS).not.toContain('reportes.ver');
     expect(PERMISOS_BASICOS).not.toContain('planes.gestionar');
-    expect(PERMISOS_BASICOS).not.toContain('clientes.baja');
     expect(PERMISOS_BASICOS).not.toContain('clientes.bloquear');
+    expect(PERMISOS_BASICOS).not.toContain('clientes.baja');
   });
 
   it('lo básico alcanza para atender el mostrador', () => {

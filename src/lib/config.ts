@@ -27,10 +27,10 @@ export function puerto(): number {
 /**
  * Interfaz de red donde escucha el servidor.
  *
- * Default `127.0.0.1`: solo la PC de recepción. Todavía no hay login, así que
- * escuchar en todas las interfaces dejaría la API abierta a cualquiera en el
- * wifi del gimnasio. Para que el dueño entre por Tailscale: `HOST=0.0.0.0`,
- * y recién cuando exista el módulo de auth.
+ * Default `127.0.0.1`: solo la PC de recepción. Para que el dueño entre por
+ * Tailscale hay que arrancar con `HOST=0.0.0.0`; eso también deja el sistema
+ * visible en el wifi del gimnasio, protegido solo por el ingreso con usuario
+ * y contraseña. Ver docs/INSTALACION.md antes de cambiarlo.
  */
 export function host(): string {
   return process.env.HOST?.trim() || '127.0.0.1';
