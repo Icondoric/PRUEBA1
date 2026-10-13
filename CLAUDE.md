@@ -104,13 +104,18 @@ disfraces una falla técnica de mensaje amable.
 
 - Responde en **< 100ms**. Es SQLite local, no hay excusa.
 - Autofoco permanente, Enter envía, sin mouse.
-- Pantalla completa: verde / amarillo (≤3 días) / rojo, con nombre, foto y días
+- Pantalla completa: verde / ámbar (≤3 días) / rojo, con nombre, foto y días
   restantes. Se limpia sola a los 3 segundos.
 - Sonido distinto para permitido y rechazado.
 - Un pase por sesión vigente dice "válido hoy" en verde, no "vence hoy" en
-  amarillo. Avisar que renueve un pase diario es ruido.
+  ámbar. Avisar que renueve un pase diario es ruido.
 
 ## Interfaz — leé la skill antes de tocar una pantalla
+
+**Colores, modos y contrastes: `docs/ESTILO.md`.** Ningún componente escribe
+un color (siempre un token de `src/web/shared/styles/tokens.css`), y ninguna
+pantalla está terminada sin revisarla en modo claro Y oscuro. En el check-in
+el ámbar significa solo "por vencer"; en el resto es marca.
 
 **Antes de escribir o revisar cualquier cosa en `src/web/`, cargá la skill
 `apple-design`** (`.claude/skills/apple-design/SKILL.md`). Define cómo se

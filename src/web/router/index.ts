@@ -5,6 +5,7 @@ import {
   claveSesion,
   consultaSesion,
 } from '@/web/features/sesion/api/sesion.api';
+import { avisarLoQueDejoLaNavegacion } from '@/web/shared/lib/avisos';
 import { avisarSiSePierdeLaSesion, queryClient } from '@/web/shared/lib/query';
 import { seccionesDe, tieneAcceso } from './secciones';
 
@@ -19,6 +20,8 @@ declare module 'vue-router' {
     permisos?: readonly Permiso[];
     /** Solo para el dueño. No se delega. */
     soloDueno?: boolean;
+    /** Muestra del sistema visual. Existe solo con `pnpm dev`; no pide sesión. */
+    muestra?: boolean;
   }
 }
 
@@ -132,6 +135,17 @@ export const router = createRouter({
       component: () => import('@/web/features/checkin/views/CheckinView.vue'),
       meta: { titulo: 'Check-in', kiosco: true, permisos: ['checkin.usar'] },
     },
+    // No llega al build: es para revisar tokens y componentes en los dos modos.
+    ...(import.meta.env.DEV
+      ? [
+          {
+            path: '/muestra',
+            name: 'muestra',
+            component: () => import('@/web/features/muestra/views/MuestraView.vue'),
+            meta: { titulo: 'Muestra visual', kiosco: true, muestra: true },
+          },
+        ]
+      : []),
     {
       path: '/:resto(.*)*',
       name: 'no-encontrada',
@@ -150,6 +164,8 @@ export const router = createRouter({
  * revisa cada pedido por su cuenta.
  */
 router.beforeEach(async (a) => {
+  if (a.meta.muestra) return true;
+
   let usuario: UsuarioSesion | null;
   try {
     usuario = await queryClient.fetchQuery(consultaSesion);
@@ -177,6 +193,8 @@ router.beforeEach(async (a) => {
 
 router.afterEach((a) => {
   document.title = `${a.meta.titulo} · Gimnasio`;
+  // "Cliente registrado", "Cambios guardados": lo deja el formulario al volver.
+  avisarLoQueDejoLaNavegacion();
 });
 
 // La sesión venció, o el dueño desactivó la cuenta, en medio del uso.

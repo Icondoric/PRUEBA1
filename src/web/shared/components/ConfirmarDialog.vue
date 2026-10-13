@@ -37,12 +37,12 @@ onMounted(() => {
   <dialog
     ref="dialogo"
     aria-labelledby="titulo-confirmacion"
-    class="bg-background text-foreground m-auto w-full max-w-lg rounded-xl border p-6 backdrop:bg-black/50"
+    class="bg-background text-foreground backdrop:bg-overlay m-auto w-full max-w-lg rounded-xl border p-6"
     @close="emit('cerrar')"
   >
     <div class="space-y-5">
       <div class="space-y-2">
-        <h2 id="titulo-confirmacion" class="text-lg font-semibold tracking-tight">
+        <h2 id="titulo-confirmacion" class="titulo-seccion">
           {{ titulo }}
         </h2>
         <div class="text-muted-foreground space-y-2 text-sm">

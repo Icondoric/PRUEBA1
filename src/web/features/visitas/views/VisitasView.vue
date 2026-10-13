@@ -121,7 +121,7 @@ const guardar = handleSubmit(
 <template>
   <div class="space-y-8">
     <div class="space-y-1">
-      <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">Visitas</h1>
+      <h1 tabindex="-1" class="titulo-pantalla">Visitas</h1>
       <p class="text-muted-foreground max-w-prose text-sm">
         Entradas gratis: cortesías, clases de prueba y acompañantes. Si la persona pagó,
         no va acá: se le vende un pase por sesión.
@@ -129,9 +129,7 @@ const guardar = handleSubmit(
     </div>
 
     <section aria-labelledby="titulo-nueva-visita" class="space-y-4">
-      <h2 id="titulo-nueva-visita" class="text-lg font-semibold tracking-tight">
-        Registrar una visita
-      </h2>
+      <h2 id="titulo-nueva-visita" class="titulo-seccion">Registrar una visita</h2>
 
       <form class="max-w-2xl space-y-5" novalidate @submit="guardar">
         <div class="grid gap-4 sm:grid-cols-2">
@@ -234,9 +232,7 @@ const guardar = handleSubmit(
     </section>
 
     <section aria-labelledby="titulo-visitas" class="space-y-4">
-      <h2 id="titulo-visitas" class="text-lg font-semibold tracking-tight">
-        Últimos 30 días
-      </h2>
+      <h2 id="titulo-visitas" class="titulo-seccion">Últimos 30 días</h2>
 
       <ErrorDeCarga
         v-if="error && !data"

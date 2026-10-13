@@ -34,28 +34,20 @@ const noExiste = computed(
 
 const tardando = refDebounced(isPending, 150);
 const mostrarEsqueleto = computed(() => isPending.value && tardando.value);
-
-// "Cliente registrado" / "Cambios guardados": lo deja el formulario al volver.
-const confirmacion = computed(() => {
-  const aviso: unknown = history.state?.aviso;
-  return route.path && typeof aviso === 'string' ? aviso : '';
-});
 </script>
 
 <template>
   <div class="max-w-3xl space-y-6">
     <RouterLink
       :to="{ name: 'clientes' }"
-      class="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex items-center gap-1.5 rounded-sm text-sm outline-none focus-visible:ring-3"
+      class="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-sm text-sm outline-none focus-visible:ring-3"
     >
       <ArrowLeft class="size-4" aria-hidden="true" />
       Clientes
     </RouterLink>
 
     <template v-if="noExiste">
-      <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">
-        No se encontró ese cliente
-      </h1>
+      <h1 tabindex="-1" class="titulo-pantalla">No se encontró ese cliente</h1>
       <p class="text-muted-foreground max-w-prose text-sm">
         Puede que el enlace esté mal o que el cliente haya sido dado de baja. Buscalo por
         nombre, CI o número de socio en la lista.
@@ -63,9 +55,7 @@ const confirmacion = computed(() => {
     </template>
 
     <template v-else-if="error && !cliente">
-      <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">
-        Ficha del cliente
-      </h1>
+      <h1 tabindex="-1" class="titulo-pantalla">Ficha del cliente</h1>
       <ErrorDeCarga
         titulo="No se pudo cargar la ficha"
         :mensaje="error.message"
@@ -75,13 +65,9 @@ const confirmacion = computed(() => {
     </template>
 
     <template v-else-if="cliente">
-      <p v-if="confirmacion" role="status" class="rounded-md border px-3 py-2 text-sm">
-        {{ confirmacion }}
-      </p>
-
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="space-y-2">
-          <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">
+          <h1 tabindex="-1" class="titulo-pantalla">
             {{ cliente.nombreCompleto }}
           </h1>
           <ClienteEtiquetas :cliente="cliente" />
@@ -142,7 +128,7 @@ const confirmacion = computed(() => {
                 name: 'cliente-ficha',
                 params: { id: cliente.referidoPorClienteId },
               }"
-              class="focus-visible:ring-ring/50 rounded-sm underline underline-offset-4 outline-none focus-visible:ring-3"
+              class="focus-visible:ring-ring rounded-sm underline underline-offset-4 outline-none focus-visible:ring-3"
             >
               {{
                 padrino
@@ -169,7 +155,7 @@ const confirmacion = computed(() => {
     </template>
 
     <template v-else>
-      <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">
+      <h1 tabindex="-1" class="titulo-pantalla">
         <span class="sr-only">Cargando la ficha del cliente</span>
         <Skeleton v-if="mostrarEsqueleto" class="h-8 w-64" aria-hidden="true" />
       </h1>

@@ -172,16 +172,14 @@ const confirmar = handleSubmit(
   <div class="max-w-3xl space-y-6">
     <RouterLink
       :to="ficha"
-      class="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex items-center gap-1.5 rounded-sm text-sm outline-none focus-visible:ring-3"
+      class="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-sm text-sm outline-none focus-visible:ring-3"
     >
       <ArrowLeft class="size-4" aria-hidden="true" />
       Ficha del cliente
     </RouterLink>
 
     <div class="space-y-1">
-      <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">
-        Vender membresía
-      </h1>
+      <h1 tabindex="-1" class="titulo-pantalla">Vender membresía</h1>
       <p v-if="cliente" class="text-muted-foreground text-sm">
         Para {{ cliente.nombreCompleto }}, socio nº {{ cliente.nroSocio }}
       </p>

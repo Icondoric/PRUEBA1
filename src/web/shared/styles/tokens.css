@@ -1,0 +1,159 @@
+/*
+ * Tokens del sistema visual. Única fuente de colores y radios: los componentes
+ * usan `bg-primary`, `text-muted-foreground`, `bg-estado-permitido`, etc.
+ * Ningún componente escribe un color. Las reglas y los contrastes están en
+ * docs/ESTILO.md.
+ *
+ * Dos modos, los dos terminados. El oscuro es el de fábrica y se conmuta con
+ * la clase `.dark` en <html> (ver src/web/shared/lib/tema.ts).
+ */
+
+/* ── MARCA ──────────────────────────────────────────────────────────────────
+ * El ámbar del logo (de #C07711 a #FFCE4F; ancla #F2920E). Cambiar de gimnasio
+ * es editar solo este bloque: la escala y sus dos tintes de fondo.
+ */
+:root {
+  --marca-50: hsl(38 100% 96%);
+  --marca-100: hsl(38 95% 89%);
+  --marca-200: hsl(38 93% 78%);
+  --marca-300: hsl(38 93% 65%);
+  --marca-400: hsl(36 93% 57%);
+  --marca-500: hsl(35 89% 50%); /* ancla */
+  --marca-600: hsl(33 91% 44%);
+  --marca-700: hsl(30 87% 36%);
+  --marca-800: hsl(28 79% 30%);
+  --marca-900: hsl(27 74% 25%);
+  --marca-tinte-claro: hsl(38 95% 92%);
+  --marca-tinte-oscuro: hsl(28 60% 18%);
+  --marca-sobre-tinte-claro: hsl(28 79% 25%);
+}
+
+/* ── MODO CLARO ─────────────────────────────────────────────────────────────
+ * Existe sobre todo para los reportes, que el dueño mira en el celular, al sol.
+ * Neutros: escala stone (negro cálido). Nada de grises fríos al lado del ámbar.
+ */
+:root {
+  color-scheme: light;
+  /* 12 px en controles; las tarjetas usan `rounded-xl` (16 px). */
+  --radius: 0.75rem;
+
+  --background: hsl(40 33% 99%);
+  --foreground: hsl(20 14% 4%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(20 14% 4%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(20 14% 4%);
+  --primary: var(--marca-500);
+  --primary-foreground: hsl(20 14% 4%); /* casi negro, nunca blanco */
+  --primary-text: var(--marca-700); /* la marca como texto o ícono */
+  --secondary: hsl(30 10% 95%);
+  --secondary-foreground: hsl(20 14% 10%);
+  --muted: hsl(30 10% 95%);
+  --muted-foreground: hsl(25 6% 40%);
+  --accent: var(--marca-tinte-claro);
+  --accent-foreground: var(--marca-sobre-tinte-claro);
+  --destructive: hsl(0 72% 45%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(25 10% 88%);
+  /* Más oscuro que --border: el contorno de un campo tiene que verse (3,2:1). */
+  --input: hsl(25 6% 56%);
+  /* ámbar-600 y no 500: el anillo de foco necesita 3:1 contra el fondo. */
+  --ring: var(--marca-600);
+  --overlay: hsl(20 14% 4% / 55%);
+  /* Barras de gráficos: ámbar-700, porque el 500 no llega a 3:1 sobre `muted`. */
+  --grafico: var(--marca-700);
+
+  --estado-permitido: hsl(142 72% 29%);
+  --estado-permitido-foreground: hsl(0 0% 100%);
+  --estado-por-vencer: var(--marca-500);
+  --estado-por-vencer-foreground: hsl(20 14% 4%);
+  --estado-rechazado: hsl(0 74% 42%);
+  --estado-rechazado-foreground: hsl(0 0% 100%);
+}
+
+/* ── MODO OSCURO ────────────────────────────────────────────────────────────
+ * Negro cálido, como el logo. Acá las sombras casi no funcionan: las capas se
+ * separan con un fondo más claro (card sobre background), no con una sombra.
+ */
+.dark {
+  color-scheme: dark;
+
+  --background: hsl(20 14% 4%);
+  --foreground: hsl(40 20% 96%);
+  --card: hsl(20 12% 8%);
+  --card-foreground: hsl(40 20% 96%);
+  --popover: hsl(20 12% 8%);
+  --popover-foreground: hsl(40 20% 96%);
+  --primary: var(--marca-500); /* el relleno no cambia */
+  --primary-foreground: hsl(20 14% 4%);
+  --primary-text: var(--marca-400); /* el 700 se hunde acá */
+  --secondary: hsl(20 10% 15%);
+  --secondary-foreground: hsl(40 20% 96%);
+  --muted: hsl(20 10% 15%);
+  --muted-foreground: hsl(30 8% 64%);
+  --accent: var(--marca-tinte-oscuro);
+  --accent-foreground: var(--marca-300);
+  --destructive: hsl(0 72% 51%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(20 10% 18%);
+  --input: hsl(20 8% 40%);
+  --ring: var(--marca-400);
+  --overlay: hsl(20 14% 2% / 70%);
+  --grafico: var(--marca-500);
+
+  --estado-permitido: hsl(142 70% 33%);
+  --estado-permitido-foreground: hsl(0 0% 100%);
+  --estado-por-vencer: var(--marca-400);
+  --estado-por-vencer-foreground: hsl(20 14% 4%);
+  --estado-rechazado: hsl(0 72% 48%);
+  --estado-rechazado-foreground: hsl(0 0% 100%);
+}
+
+/*
+ * Sin marca: el check-in. Ahí el ámbar significa SOLO "por vencer", así que
+ * botones, foco y selección quedan en blanco y negro. Los componentes no se
+ * enteran: siguen pidiendo `bg-primary` y reciben el neutro.
+ */
+.sin-marca {
+  --primary: var(--foreground);
+  --primary-foreground: var(--background);
+  --primary-text: var(--foreground);
+  --accent: var(--muted);
+  --accent-foreground: var(--foreground);
+  --ring: var(--foreground);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-overlay: var(--overlay);
+  --color-grafico: var(--grafico);
+  --color-estado-permitido: var(--estado-permitido);
+  --color-estado-permitido-foreground: var(--estado-permitido-foreground);
+  --color-estado-por-vencer: var(--estado-por-vencer);
+  --color-estado-por-vencer-foreground: var(--estado-por-vencer-foreground);
+  --color-estado-rechazado: var(--estado-rechazado);
+  --color-estado-rechazado-foreground: var(--estado-rechazado-foreground);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+}

@@ -18,10 +18,11 @@ const ancho = computed(() =>
 </script>
 
 <template>
-  <div class="bg-muted h-2 w-full overflow-hidden rounded-full" aria-hidden="true">
+  <div class="bg-muted h-2.5 w-full overflow-hidden rounded-[4px]" aria-hidden="true">
+    <!-- Crece desde cero al aparecer: el ancho ya es el final, solo se escala. -->
     <div
-      class="h-full rounded-full"
-      :class="tenue ? 'bg-muted-foreground/50' : 'bg-primary'"
+      class="animate-crecer h-full origin-left rounded-r-[4px]"
+      :class="tenue ? 'bg-muted-foreground/50' : 'bg-grafico'"
       :style="{ width: ancho }"
     ></div>
   </div>

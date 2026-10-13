@@ -1,10 +1,19 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="color-scheme" content="dark light" />
     <title>Gimnasio</title>
+    <!-- Antes de pintar, para que no parpadee: oscuro salvo que se haya elegido
+         claro. La clave es la de src/web/shared/lib/tema.ts. -->
+    <script>
+      try {
+        if (localStorage.getItem('gym-tema') === 'claro') {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="app"></div>

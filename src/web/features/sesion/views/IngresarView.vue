@@ -7,6 +7,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useForm } from 'vee-validate';
 import { loginInputSchema } from '@/modules/usuarios/contrato';
 import CampoFormulario from '@/web/shared/components/CampoFormulario.vue';
+import InterruptorDeTema from '@/web/shared/components/InterruptorDeTema.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
 import { esquemaDeFormulario } from '@/web/shared/lib/validacion';
 import { Button } from '@/web/shared/ui/button';
@@ -68,10 +69,22 @@ const entrar = handleSubmit(
 </script>
 
 <template>
-  <main class="bg-muted/50 flex min-h-dvh items-center justify-center px-4 py-10">
-    <div class="bg-background w-full max-w-sm space-y-6 rounded-xl border p-8">
+  <main
+    class="relative flex min-h-dvh items-center justify-center bg-[radial-gradient(60rem_32rem_at_50%_-10%,color-mix(in_oklab,var(--primary)_16%,transparent),transparent_70%)] px-4 py-10"
+  >
+    <div
+      class="bg-card text-card-foreground w-full max-w-sm space-y-6 rounded-xl border p-8"
+    >
+      <!-- Lugar del logo: cuando exista, reemplaza a la inicial. -->
+      <div
+        class="bg-primary text-primary-foreground flex size-12 items-center justify-center rounded-lg text-xl font-bold"
+        aria-hidden="true"
+      >
+        G
+      </div>
+
       <div class="space-y-1">
-        <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">Gimnasio</h1>
+        <h1 tabindex="-1" class="titulo-pantalla">Gimnasio</h1>
         <p class="text-muted-foreground text-sm">Ingresá con tu usuario y contraseña.</p>
       </div>
 
@@ -125,5 +138,8 @@ const entrar = handleSubmit(
         ¿Olvidaste tu contraseña? Pedile al dueño que te ponga una nueva.
       </p>
     </div>
+
+    <!-- Después del formulario en el orden de tabulación: primero se ingresa. -->
+    <InterruptorDeTema class="absolute top-4 right-4" />
   </main>
 </template>

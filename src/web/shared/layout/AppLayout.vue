@@ -4,6 +4,7 @@ import { computed, nextTick, watch } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { useAccesos, useCerrarSesion } from '@/web/features/sesion/api/sesion.api';
 import { seccionesDe } from '@/web/router/secciones';
+import InterruptorDeTema from '@/web/shared/components/InterruptorDeTema.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -25,10 +26,23 @@ watch(
 // Cada uno ve en el menú solo las secciones a las que tiene acceso.
 const secciones = computed(() => (usuario.value ? seccionesDe(usuario.value) : []));
 
+const iniciales = computed(() =>
+  (usuario.value?.nombre ?? '')
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((palabra) => palabra.charAt(0).toUpperCase())
+    .join(''),
+);
+
 async function salir() {
   await cerrar.mutateAsync().catch(() => null);
   await router.replace({ name: 'ingresar' });
 }
+
+// Lo que comparten los enlaces y botones del menú: alto, forma y respuesta al
+// presionar. El color lo pone cada uno.
+const ITEM =
+  'focus-visible:ring-ring flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,transform] duration-100 outline-none focus-visible:ring-3 active:scale-[0.98]';
 </script>
 
 <template>
@@ -39,11 +53,22 @@ async function salir() {
     Saltar al contenido
   </a>
 
-  <div class="min-h-dvh md:grid md:grid-cols-[13rem_1fr]">
+  <div class="min-h-dvh md:grid md:grid-cols-[15rem_1fr]">
+    <!-- En angosto es una barra fija arriba, translúcida: el contenido pasa por
+         debajo. En ancho es una columna sólida, sin desenfoque. -->
     <aside
-      class="bg-muted/50 flex items-center gap-4 border-b px-4 py-2 md:flex-col md:items-stretch md:gap-6 md:border-r md:border-b-0 md:py-5"
+      class="vidrio md:bg-card sticky top-0 z-10 flex items-center gap-2 border-b px-3 py-2 md:h-dvh md:flex-col md:items-stretch md:gap-6 md:border-r md:border-b-0 md:py-5 md:[backdrop-filter:none]"
     >
-      <p class="shrink-0 px-2 text-base font-semibold tracking-tight">Gimnasio</p>
+      <div class="flex shrink-0 items-center gap-3 md:px-2">
+        <!-- Lugar del logo: cuando exista, reemplaza a la inicial. -->
+        <div
+          class="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-md text-base font-bold"
+          aria-hidden="true"
+        >
+          G
+        </div>
+        <p class="hidden text-base font-semibold tracking-tight md:block">Gimnasio</p>
+      </div>
 
       <!-- En pantalla angosta las secciones se deslizan de costado, sin ensanchar la página. -->
       <nav
@@ -54,10 +79,15 @@ async function salir() {
           <li v-for="seccion in secciones" :key="seccion.ruta">
             <RouterLink
               :to="{ name: seccion.ruta }"
-              class="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex h-9 items-center gap-2 rounded-md px-2 text-sm font-medium whitespace-nowrap outline-none focus-visible:ring-3"
-              active-class="bg-accent !text-foreground"
+              class="text-muted-foreground hover:bg-muted hover:text-foreground"
+              :class="ITEM"
+              active-class="!bg-accent !text-accent-foreground"
             >
-              <component :is="seccion.icono" class="size-4" aria-hidden="true" />
+              <component
+                :is="seccion.icono"
+                class="size-[1.125rem] shrink-0"
+                aria-hidden="true"
+              />
               {{ seccion.etiqueta }}
             </RouterLink>
           </li>
@@ -67,34 +97,44 @@ async function salir() {
       <!-- Quién está usando el sistema, siempre a la vista, y cómo salir. -->
       <div
         v-if="usuario"
-        class="flex shrink-0 items-center gap-2 md:mt-auto md:flex-col md:items-stretch md:border-t md:pt-4"
+        class="flex shrink-0 items-center gap-1 md:mt-auto md:flex-col md:items-stretch md:border-t md:pt-4"
       >
         <RouterLink
           :to="{ name: 'mi-cuenta' }"
-          class="hover:bg-accent focus-visible:ring-ring/50 hidden min-w-0 rounded-md px-2 py-1 outline-none focus-visible:ring-3 md:block"
-          active-class="bg-accent"
+          class="hover:bg-muted focus-visible:ring-ring hidden min-w-0 items-center gap-3 rounded-md px-2 py-2 transition-colors duration-100 outline-none focus-visible:ring-3 md:flex"
+          active-class="bg-muted"
         >
-          <span class="block truncate text-sm font-medium">{{ usuario.nombre }}</span>
-          <span class="text-muted-foreground block text-xs">
-            {{ esDueno ? 'Dueño' : 'Recepción' }} · Mi cuenta
+          <span
+            class="bg-accent text-accent-foreground flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold"
+            aria-hidden="true"
+          >
+            {{ iniciales }}
+          </span>
+          <span class="min-w-0">
+            <span class="block truncate text-sm font-medium">{{ usuario.nombre }}</span>
+            <span class="text-muted-foreground block text-xs">
+              {{ esDueno ? 'Dueño' : 'Recepción' }} · Mi cuenta
+            </span>
           </span>
         </RouterLink>
+        <InterruptorDeTema compacto />
         <button
           type="button"
-          class="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 flex h-9 items-center gap-2 rounded-md px-2 text-sm font-medium whitespace-nowrap outline-none focus-visible:ring-3"
+          class="text-muted-foreground hover:bg-muted hover:text-foreground"
+          :class="ITEM"
           :disabled="cerrar.isPending.value"
           aria-label="Cerrar sesión"
           title="Cerrar sesión"
           @click="salir"
         >
-          <LogOut class="size-4" aria-hidden="true" />
+          <LogOut class="size-[1.125rem]" aria-hidden="true" />
           <!-- En angosto queda solo el ícono, para dejarle lugar a las secciones. -->
           <span class="hidden md:inline">Cerrar sesión</span>
         </button>
       </div>
     </aside>
 
-    <main id="contenido" class="min-w-0 px-4 py-6 md:px-8">
+    <main id="contenido" class="min-w-0 px-4 py-6 md:px-10 md:py-8">
       <RouterView />
     </main>
   </div>

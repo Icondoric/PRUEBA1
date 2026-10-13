@@ -10,6 +10,7 @@ import { useForm } from 'vee-validate';
 import { anulacionInputSchema } from '@/modules/pagos';
 import CampoFormulario from '@/web/shared/components/CampoFormulario.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
+import { avisos } from '@/web/shared/lib/avisos';
 import { formatearBs, formatearFecha } from '@/web/shared/lib/formato';
 import { esquemaDeFormulario } from '@/web/shared/lib/validacion';
 import { Button } from '@/web/shared/ui/button';
@@ -42,6 +43,7 @@ const confirmar = handleSubmit(async (valores) => {
   try {
     await anular.mutateAsync({ id: props.pago.id, motivo: valores.motivo });
     dialogo.value?.close();
+    avisos.exito('Pago anulado.');
   } catch (error) {
     if (error instanceof ErrorDeApi && error.detalles.campo === 'motivo') {
       setFieldError('motivo', error.message);
@@ -64,14 +66,12 @@ onMounted(() => {
   <dialog
     ref="dialogo"
     aria-labelledby="titulo-anulacion"
-    class="bg-background text-foreground m-auto w-full max-w-lg rounded-xl border p-6 backdrop:bg-black/50"
+    class="bg-background text-foreground backdrop:bg-overlay m-auto w-full max-w-lg rounded-xl border p-6"
     @close="emit('cerrar')"
   >
     <form class="space-y-5" novalidate @submit="confirmar">
       <div class="space-y-2">
-        <h2 id="titulo-anulacion" class="text-lg font-semibold tracking-tight">
-          ¿Anular este pago?
-        </h2>
+        <h2 id="titulo-anulacion" class="titulo-seccion">¿Anular este pago?</h2>
         <p class="text-sm">
           {{ formatearBs(pago.montoCentavos) }} de {{ pago.clienteNombreCompleto }}, del
           {{ formatearFecha(pago.fechaPago)
@@ -98,7 +98,7 @@ onMounted(() => {
           v-model="motivo"
           rows="3"
           autofocus
-          class="border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-3"
+          class="border-input focus-visible:border-ring focus-visible:ring-ring aria-invalid:border-destructive w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-3"
         ></textarea>
       </CampoFormulario>
 

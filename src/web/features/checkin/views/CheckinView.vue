@@ -9,6 +9,8 @@
  *     teclear mientras todavía se ve el resultado anterior.
  *   - F2 abre la venta de un pase por sesión, también sin mouse.
  *   - Sin animaciones: acá mandan tamaño, contraste y velocidad.
+ *   - Sin color de marca (`sin-marca`): acá el ámbar significa SOLO "por
+ *     vencer". La pantalla está en blanco y negro hasta que hay resultado.
  *
  * Quién entra lo decide el servidor (`evaluarAcceso`). Esta pantalla solo
  * muestra el veredicto.
@@ -219,14 +221,14 @@ const iniciales = computed(() =>
 
 const FONDO: Record<Tono, string> = {
   neutro: 'bg-background text-foreground',
-  ok: 'bg-acceso-ok text-acceso-ok-foreground',
-  aviso: 'bg-acceso-aviso text-acceso-aviso-foreground',
-  rechazo: 'bg-acceso-rechazo text-acceso-rechazo-foreground',
+  ok: 'bg-estado-permitido text-estado-permitido-foreground',
+  aviso: 'bg-estado-por-vencer text-estado-por-vencer-foreground',
+  rechazo: 'bg-estado-rechazado text-estado-rechazado-foreground',
 };
 </script>
 
 <template>
-  <main class="flex min-h-dvh flex-col" :class="FONDO[vista?.tono ?? 'neutro']">
+  <main class="sin-marca flex min-h-dvh flex-col" :class="FONDO[vista?.tono ?? 'neutro']">
     <form
       class="flex flex-col items-center gap-3 px-6 pt-10"
       autocomplete="off"
@@ -287,7 +289,10 @@ const FONDO: Record<Tono, string> = {
       </p>
     </div>
 
-    <p v-if="puede('checkin.pases')" class="absolute bottom-4 left-4 text-sm opacity-70">
+    <p
+      v-if="puede('checkin.pases')"
+      class="absolute bottom-4 left-4 text-base font-medium"
+    >
       <kbd class="rounded border border-current px-1.5 py-0.5 font-sans">F2</kbd>
       Vender pase por sesión
     </p>
@@ -297,7 +302,7 @@ const FONDO: Record<Tono, string> = {
       v-if="tieneOtrasSecciones"
       :to="{ name: 'inicio' }"
       tabindex="-1"
-      class="absolute right-4 bottom-4 text-sm underline underline-offset-4 opacity-70 hover:opacity-100"
+      class="absolute right-4 bottom-4 text-base font-medium underline underline-offset-4"
     >
       Salir del check-in
     </RouterLink>
@@ -305,7 +310,7 @@ const FONDO: Record<Tono, string> = {
       v-else
       type="button"
       tabindex="-1"
-      class="absolute right-4 bottom-4 text-sm underline underline-offset-4 opacity-70 hover:opacity-100"
+      class="absolute right-4 bottom-4 text-base font-medium underline underline-offset-4"
       @click="cerrarSesion"
     >
       Cerrar sesión

@@ -13,7 +13,7 @@ const { data, error, isFetching, refetch } = usePagosDeCliente(() => props.clien
 
 <template>
   <section aria-labelledby="titulo-pagos" class="space-y-4">
-    <h2 id="titulo-pagos" class="text-lg font-semibold tracking-tight">Pagos</h2>
+    <h2 id="titulo-pagos" class="titulo-seccion">Pagos</h2>
 
     <ErrorDeCarga
       v-if="error && !data"

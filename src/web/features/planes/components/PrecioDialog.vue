@@ -13,6 +13,7 @@
 import { nextTick, onMounted, ref } from 'vue';
 import CampoFormulario from '@/web/shared/components/CampoFormulario.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
+import { avisos } from '@/web/shared/lib/avisos';
 import { aCentavos, formatearBs, formatearFecha } from '@/web/shared/lib/formato';
 import { Button } from '@/web/shared/ui/button';
 import { Input } from '@/web/shared/ui/input';
@@ -124,6 +125,7 @@ async function guardar() {
       datos: revisado.value.datos,
     });
     dialogo.value?.close();
+    avisos.exito('Precio agregado.');
   } catch (error) {
     revisado.value = null;
     mostrarError(error);
@@ -139,13 +141,13 @@ onMounted(() => {
   <dialog
     ref="dialogo"
     aria-labelledby="titulo-precio"
-    class="bg-background text-foreground m-auto w-full max-w-lg rounded-xl border p-6 backdrop:bg-black/50"
+    class="bg-background text-foreground backdrop:bg-overlay m-auto w-full max-w-lg rounded-xl border p-6"
     @close="emit('cerrar')"
   >
     <!-- Paso 1: escribir -->
     <form v-if="!revisado" class="space-y-5" novalidate @submit.prevent="revisar">
       <div class="space-y-2">
-        <h2 id="titulo-precio" class="text-lg font-semibold tracking-tight">
+        <h2 id="titulo-precio" class="titulo-seccion">
           {{ esPromocion ? 'Cargar promoción' : 'Cambiar precio' }} · {{ plan.nombre }}
         </h2>
         <p class="text-muted-foreground text-sm">
@@ -223,9 +225,7 @@ onMounted(() => {
 
     <!-- Paso 2: ver qué se va a cobrar, y recién ahí guardar -->
     <div v-else class="space-y-5">
-      <h2 id="titulo-precio" class="text-lg font-semibold tracking-tight">
-        Así queda {{ plan.nombre }}
-      </h2>
+      <h2 id="titulo-precio" class="titulo-seccion">Así queda {{ plan.nombre }}</h2>
 
       <dl class="space-y-3 rounded-lg border p-4" aria-live="polite">
         <div class="flex items-baseline justify-between gap-4">

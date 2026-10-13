@@ -50,7 +50,7 @@ const porAnular = ref<PagoVista | null>(null);
           <TableCell v-if="mostrarCliente" class="font-medium">
             <RouterLink
               :to="{ name: 'cliente-ficha', params: { id: pago.clienteId } }"
-              class="focus-visible:ring-ring/50 rounded-sm outline-none hover:underline focus-visible:ring-3"
+              class="focus-visible:ring-ring rounded-sm outline-none hover:underline focus-visible:ring-3"
             >
               {{ pago.clienteNombreCompleto }}
             </RouterLink>

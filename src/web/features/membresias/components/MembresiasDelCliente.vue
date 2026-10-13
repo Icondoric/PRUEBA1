@@ -91,7 +91,7 @@ const ETIQUETAS: Record<EstadoMembresia, string> = {
 
 <template>
   <section aria-labelledby="titulo-membresia" class="space-y-4">
-    <h2 id="titulo-membresia" class="text-lg font-semibold tracking-tight">Membresía</h2>
+    <h2 id="titulo-membresia" class="titulo-seccion">Membresía</h2>
 
     <ErrorDeCarga
       v-if="error && !data"

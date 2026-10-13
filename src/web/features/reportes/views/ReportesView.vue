@@ -8,7 +8,7 @@
  *
  * Las barras son un refuerzo: el número está siempre escrito al lado.
  */
-import { Download } from '@lucide/vue';
+import { Ban, Banknote, Download, LogIn, Users } from '@lucide/vue';
 import { refDebounced } from '@vueuse/core';
 import { computed } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
@@ -55,6 +55,33 @@ function elegirMes(mes: unknown) {
   const esElActual = mes === data.value?.meses.at(-1);
   void router.replace({ query: { mes: esElActual ? undefined : String(mes) } });
 }
+
+/** Las cuatro cajas de "Hoy". Los números vienen hechos del servidor. */
+const hoy = computed(() => {
+  const numeros = data.value?.hoyEnNumeros;
+  if (!numeros) return [];
+  return [
+    {
+      nombre: 'Socios activos',
+      valor: String(numeros.sociosActivos),
+      pie: 'Sin contar pases por sesión',
+      icono: Users,
+    },
+    {
+      nombre: 'Cobrado',
+      valor: formatearBs(numeros.cobradoCentavos),
+      pie: null,
+      icono: Banknote,
+    },
+    { nombre: 'Entraron', valor: String(numeros.ingresos), pie: null, icono: LogIn },
+    {
+      nombre: 'Rebotaron',
+      valor: String(numeros.rechazados),
+      pie: 'Vencidos o sin membresía',
+      icono: Ban,
+    },
+  ];
+});
 
 const maximo = (valores: number[]) => Math.max(0, ...valores);
 
@@ -173,9 +200,9 @@ function exportarPases() {
 </script>
 
 <template>
-  <div class="max-w-3xl space-y-10">
+  <div class="max-w-4xl space-y-10">
     <div class="space-y-1">
-      <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">Reportes</h1>
+      <h1 tabindex="-1" class="titulo-pantalla">Reportes</h1>
       <p v-if="data" class="text-muted-foreground text-sm">
         Datos al {{ formatearFecha(data.hoy) }}
       </p>
@@ -197,33 +224,24 @@ function exportarPases() {
     >
       <!-- Hoy -->
       <section aria-labelledby="r-hoy" class="space-y-3">
-        <h2 id="r-hoy" class="text-lg font-semibold tracking-tight">Hoy</h2>
-        <dl class="grid grid-cols-2 gap-3">
-          <div class="bg-muted/50 space-y-1 rounded-lg border p-4">
-            <dt class="text-muted-foreground text-sm">Socios activos</dt>
-            <dd class="text-2xl font-semibold tabular-nums">
-              {{ data.hoyEnNumeros.sociosActivos }}
-            </dd>
-            <dd class="text-muted-foreground text-xs">Sin contar pases por sesión</dd>
-          </div>
-          <div class="space-y-1 rounded-lg border p-4">
-            <dt class="text-muted-foreground text-sm">Cobrado</dt>
-            <dd class="text-2xl font-semibold tabular-nums">
-              {{ formatearBs(data.hoyEnNumeros.cobradoCentavos) }}
-            </dd>
-          </div>
-          <div class="space-y-1 rounded-lg border p-4">
-            <dt class="text-muted-foreground text-sm">Entraron</dt>
-            <dd class="text-2xl font-semibold tabular-nums">
-              {{ data.hoyEnNumeros.ingresos }}
-            </dd>
-          </div>
-          <div class="space-y-1 rounded-lg border p-4">
-            <dt class="text-muted-foreground text-sm">Rebotaron</dt>
-            <dd class="text-2xl font-semibold tabular-nums">
-              {{ data.hoyEnNumeros.rechazados }}
-            </dd>
-            <dd class="text-muted-foreground text-xs">Vencidos o sin membresía</dd>
+        <h2 id="r-hoy" class="titulo-seccion">Hoy</h2>
+        <dl class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div
+            v-for="caja in hoy"
+            :key="caja.nombre"
+            class="bg-card text-card-foreground space-y-3 rounded-xl border p-4"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-muted-foreground text-sm font-medium">{{ caja.nombre }}</dt>
+              <span
+                class="bg-accent text-accent-foreground flex size-8 shrink-0 items-center justify-center rounded-md"
+                aria-hidden="true"
+              >
+                <component :is="caja.icono" class="size-4" />
+              </span>
+            </div>
+            <dd class="cifra">{{ caja.valor }}</dd>
+            <dd v-if="caja.pie" class="text-muted-foreground text-xs">{{ caja.pie }}</dd>
           </div>
         </dl>
       </section>
@@ -231,7 +249,7 @@ function exportarPases() {
       <!-- Por vencer -->
       <section aria-labelledby="r-por-vencer" class="space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="r-por-vencer" class="text-lg font-semibold tracking-tight">
+          <h2 id="r-por-vencer" class="titulo-seccion">
             Vencen en los próximos {{ data.porVencer.dias }} días
             <span class="text-muted-foreground font-normal tabular-nums">
               ({{ data.porVencer.socios.length }})
@@ -250,7 +268,10 @@ function exportarPases() {
           </Button>
         </div>
 
-        <ul v-if="data.porVencer.socios.length > 0" class="divide-y rounded-lg border">
+        <ul
+          v-if="data.porVencer.socios.length > 0"
+          class="bg-card divide-y rounded-xl border"
+        >
           <li
             v-for="socio in data.porVencer.socios"
             :key="socio.clienteId"
@@ -259,7 +280,7 @@ function exportarPases() {
             <div class="min-w-0">
               <RouterLink
                 :to="{ name: 'cliente-ficha', params: { id: socio.clienteId } }"
-                class="focus-visible:ring-ring/50 block truncate rounded-sm text-sm font-medium outline-none hover:underline focus-visible:ring-3"
+                class="focus-visible:ring-ring block truncate rounded-sm text-sm font-medium outline-none hover:underline focus-visible:ring-3"
               >
                 {{ socio.nombreCompleto }}
               </RouterLink>
@@ -293,7 +314,7 @@ function exportarPases() {
       <!-- Vencidos -->
       <section aria-labelledby="r-vencidos" class="space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="r-vencidos" class="text-lg font-semibold tracking-tight">
+          <h2 id="r-vencidos" class="titulo-seccion">
             Vencidos en los últimos {{ data.vencidos.dias }} días
             <span class="text-muted-foreground font-normal tabular-nums">
               ({{ data.vencidos.recientes.length }})
@@ -312,7 +333,10 @@ function exportarPases() {
           </Button>
         </div>
 
-        <ul v-if="data.vencidos.recientes.length > 0" class="divide-y rounded-lg border">
+        <ul
+          v-if="data.vencidos.recientes.length > 0"
+          class="bg-card divide-y rounded-xl border"
+        >
           <li
             v-for="socio in data.vencidos.recientes"
             :key="socio.clienteId"
@@ -321,7 +345,7 @@ function exportarPases() {
             <div class="min-w-0">
               <RouterLink
                 :to="{ name: 'cliente-ficha', params: { id: socio.clienteId } }"
-                class="focus-visible:ring-ring/50 block truncate rounded-sm text-sm font-medium outline-none hover:underline focus-visible:ring-3"
+                class="focus-visible:ring-ring block truncate rounded-sm text-sm font-medium outline-none hover:underline focus-visible:ring-3"
               >
                 {{ socio.nombreCompleto }}
               </RouterLink>
@@ -367,16 +391,14 @@ function exportarPases() {
       <!-- Cobrado por mes -->
       <section aria-labelledby="r-cobrado" class="space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="r-cobrado" class="text-lg font-semibold tracking-tight">
-            Cobrado por mes
-          </h2>
+          <h2 id="r-cobrado" class="titulo-seccion">Cobrado por mes</h2>
           <Button variant="outline" size="sm" @click="exportarCobrado">
             <Download aria-hidden="true" />
             Exportar a CSV
           </Button>
         </div>
 
-        <ul class="divide-y rounded-lg border">
+        <ul class="bg-card divide-y rounded-xl border">
           <li
             v-for="mes in data.cobradoPorMes"
             :key="mes.mes"
@@ -402,9 +424,7 @@ function exportarPases() {
       <!-- Ingresos por día -->
       <section aria-labelledby="r-ingresos" class="space-y-3">
         <div class="flex flex-wrap items-end justify-between gap-2">
-          <h2 id="r-ingresos" class="text-lg font-semibold tracking-tight">
-            Ingresos por día
-          </h2>
+          <h2 id="r-ingresos" class="titulo-seccion">Ingresos por día</h2>
           <div class="flex flex-wrap items-end gap-2">
             <div class="space-y-1.5">
               <Label for="r-mes">Mes</Label>
@@ -436,7 +456,7 @@ function exportarPases() {
           {{ totalIngresosDelMes.rechazados }} rebotaron
         </p>
 
-        <ul class="rounded-lg border px-4 py-2">
+        <ul class="bg-card rounded-xl border px-4 py-2">
           <li
             v-for="dia in data.ingresosPorDia"
             :key="dia.fecha"
@@ -459,7 +479,7 @@ function exportarPases() {
       <!-- Asistencia -->
       <section aria-labelledby="r-asistencia" class="space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="r-asistencia" class="text-lg font-semibold tracking-tight">
+          <h2 id="r-asistencia" class="titulo-seccion">
             Asistencia por día de la semana
           </h2>
           <Button variant="outline" size="sm" @click="exportarAsistencia">
@@ -471,7 +491,7 @@ function exportarPases() {
           Promedio de personas que entran, en las últimas 8 semanas.
         </p>
 
-        <ul class="rounded-lg border px-4 py-2">
+        <ul class="bg-card rounded-xl border px-4 py-2">
           <li
             v-for="dia in asistencia"
             :key="dia.nombre"
@@ -487,9 +507,7 @@ function exportarPases() {
       <!-- Socios nuevos -->
       <section aria-labelledby="r-nuevos" class="space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="r-nuevos" class="text-lg font-semibold tracking-tight">
-            Socios nuevos
-          </h2>
+          <h2 id="r-nuevos" class="titulo-seccion">Socios nuevos</h2>
           <Button variant="outline" size="sm" @click="exportarNuevos">
             <Download aria-hidden="true" />
             Exportar a CSV
@@ -499,7 +517,7 @@ function exportarPases() {
           Personas que compraron su primer plan. Quien solo compra pases no cuenta.
         </p>
 
-        <ul class="rounded-lg border px-4 py-2">
+        <ul class="bg-card rounded-xl border px-4 py-2">
           <li
             v-for="mes in data.sociosNuevosPorMes"
             :key="mes.mes"
@@ -514,11 +532,9 @@ function exportarPases() {
 
       <!-- Pases -->
       <section aria-labelledby="r-pases" class="space-y-3">
-        <h2 id="r-pases" class="text-lg font-semibold tracking-tight">
-          Pases por sesión vendidos
-        </h2>
+        <h2 id="r-pases" class="titulo-seccion">Pases por sesión vendidos</h2>
 
-        <ul class="rounded-lg border px-4 py-2">
+        <ul class="bg-card rounded-xl border px-4 py-2">
           <li
             v-for="mes in data.pases.porMes"
             :key="mes.mes"
@@ -552,7 +568,10 @@ function exportarPases() {
           plan.
         </p>
 
-        <ul v-if="data.pases.frecuentes.length > 0" class="divide-y rounded-lg border">
+        <ul
+          v-if="data.pases.frecuentes.length > 0"
+          class="bg-card divide-y rounded-xl border"
+        >
           <li
             v-for="cliente in data.pases.frecuentes"
             :key="cliente.clienteId"
@@ -561,7 +580,7 @@ function exportarPases() {
             <div class="min-w-0">
               <RouterLink
                 :to="{ name: 'cliente-ficha', params: { id: cliente.clienteId } }"
-                class="focus-visible:ring-ring/50 block truncate rounded-sm text-sm font-medium outline-none hover:underline focus-visible:ring-3"
+                class="focus-visible:ring-ring block truncate rounded-sm text-sm font-medium outline-none hover:underline focus-visible:ring-3"
               >
                 {{ cliente.nombreCompleto }}
               </RouterLink>
@@ -593,7 +612,7 @@ function exportarPases() {
     </div>
 
     <div v-else-if="mostrarEsqueleto" class="space-y-6" aria-hidden="true">
-      <Skeleton class="h-40 w-full" />
+      <Skeleton class="h-32 w-full rounded-xl" />
       <Skeleton class="h-64 w-full" />
       <Skeleton class="h-64 w-full" />
     </div>

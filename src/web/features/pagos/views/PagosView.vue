@@ -83,7 +83,7 @@ const periodo = computed(() => {
 
 <template>
   <div class="space-y-5">
-    <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">Pagos</h1>
+    <h1 tabindex="-1" class="titulo-pantalla">Pagos</h1>
 
     <form class="flex flex-wrap items-end gap-3" @submit.prevent>
       <!-- Otras fechas: solo quien tiene ese acceso. El resto ve el día de hoy. -->
@@ -156,9 +156,7 @@ const periodo = computed(() => {
         :aria-busy="isFetching"
       >
         <section aria-labelledby="titulo-caja" class="space-y-3">
-          <h2 id="titulo-caja" class="text-lg font-semibold tracking-tight">
-            Cobrado {{ periodo }}
-          </h2>
+          <h2 id="titulo-caja" class="titulo-seccion">Cobrado {{ periodo }}</h2>
 
           <dl class="grid grid-cols-2 gap-3 md:grid-cols-5">
             <div class="bg-muted/50 space-y-1 rounded-lg border p-4">

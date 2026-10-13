@@ -10,9 +10,7 @@ const { usuario } = useAccesos();
 
 <template>
   <div class="max-w-prose space-y-4">
-    <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">
-      No tenés acceso a esta parte
-    </h1>
+    <h1 tabindex="-1" class="titulo-pantalla">No tenés acceso a esta parte</h1>
     <p class="text-muted-foreground text-sm">
       Tu usuario<template v-if="usuario"> ({{ usuario.usuario }})</template> no tiene
       permiso para ver esta pantalla. Los accesos los da el dueño desde "Usuarios": pedile

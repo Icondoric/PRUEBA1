@@ -26,18 +26,13 @@ const { data, error, isPending, isFetching, refetch } = useUsuarios();
 
 const tardando = refDebounced(isPending, 150);
 const mostrarEsqueleto = computed(() => isPending.value && tardando.value);
-
-const confirmacion = computed(() => {
-  const aviso: unknown = history.state?.aviso;
-  return typeof aviso === 'string' ? aviso : '';
-});
 </script>
 
 <template>
   <div class="max-w-4xl space-y-5">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="space-y-1">
-        <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">Usuarios</h1>
+        <h1 tabindex="-1" class="titulo-pantalla">Usuarios</h1>
         <p class="text-muted-foreground max-w-prose text-sm">
           Cada persona entra con su propio usuario. Así queda registrado quién cobró cada
           cosa.
@@ -50,10 +45,6 @@ const confirmacion = computed(() => {
         </RouterLink>
       </Button>
     </div>
-
-    <p v-if="confirmacion" role="status" class="rounded-md border px-3 py-2 text-sm">
-      {{ confirmacion }}
-    </p>
 
     <ErrorDeCarga
       v-if="error && !data"
@@ -83,7 +74,7 @@ const confirmacion = computed(() => {
             <TableCell class="font-medium">
               <RouterLink
                 :to="{ name: 'usuario-editar', params: { id: usuario.id } }"
-                class="focus-visible:ring-ring/50 rounded-sm outline-none hover:underline focus-visible:ring-3"
+                class="focus-visible:ring-ring rounded-sm outline-none hover:underline focus-visible:ring-3"
                 @click.stop
               >
                 {{ usuario.nombre }}

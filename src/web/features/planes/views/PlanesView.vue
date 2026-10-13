@@ -12,6 +12,7 @@ import type { EstadoDePrecio } from '@/modules/planes';
 import ConfirmarDialog from '@/web/shared/components/ConfirmarDialog.vue';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
+import { avisos } from '@/web/shared/lib/avisos';
 import { formatearBs, formatearFecha, plural } from '@/web/shared/lib/formato';
 import { Badge } from '@/web/shared/ui/badge';
 import { Button } from '@/web/shared/ui/button';
@@ -62,11 +63,12 @@ function abrir(nuevo: Abierto) {
   abierto.value = nuevo;
 }
 
-async function hacer(accion: () => Promise<unknown>) {
+async function hacer(accion: () => Promise<unknown>, hecho: string) {
   aviso.value = '';
   try {
     await accion();
     abierto.value = null;
+    avisos.exito(hecho);
   } catch (fallo) {
     aviso.value =
       fallo instanceof ErrorDeApi
@@ -78,13 +80,16 @@ async function hacer(accion: () => Promise<unknown>) {
 function confirmarBaja() {
   const actual = abierto.value;
   if (actual?.tipo !== 'baja') return;
-  void hacer(() => cambiarEstado.mutateAsync({ id: actual.plan.id, activo: false }));
+  void hacer(
+    () => cambiarEstado.mutateAsync({ id: actual.plan.id, activo: false }),
+    'Plan dado de baja. Ya no se ofrece.',
+  );
 }
 
 function confirmarQuitar() {
   const actual = abierto.value;
   if (actual?.tipo !== 'quitar') return;
-  void hacer(() => quitarPrecio.mutateAsync(actual.precio.id));
+  void hacer(() => quitarPrecio.mutateAsync(actual.precio.id), 'Precio quitado.');
 }
 </script>
 
@@ -92,9 +97,7 @@ function confirmarQuitar() {
   <div class="max-w-4xl space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="space-y-1">
-        <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">
-          Planes y precios
-        </h1>
+        <h1 tabindex="-1" class="titulo-pantalla">Planes y precios</h1>
         <p class="text-muted-foreground max-w-prose text-sm">
           Lo que se vende y a cuánto. Un precio nunca se modifica: se carga uno nuevo, y
           lo que ya se vendió queda como estaba.
@@ -195,7 +198,12 @@ function confirmarQuitar() {
             size="sm"
             variant="ghost"
             :disabled="cambiarEstado.isPending.value"
-            @click="hacer(() => cambiarEstado.mutateAsync({ id: plan.id, activo: true }))"
+            @click="
+              hacer(
+                () => cambiarEstado.mutateAsync({ id: plan.id, activo: true }),
+                'El plan se vuelve a ofrecer.',
+              )
+            "
           >
             Volver a ofrecer plan
           </Button>

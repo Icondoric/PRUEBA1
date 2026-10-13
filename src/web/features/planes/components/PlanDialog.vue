@@ -9,6 +9,7 @@
 import { nextTick, onMounted, ref } from 'vue';
 import CampoFormulario from '@/web/shared/components/CampoFormulario.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
+import { avisos } from '@/web/shared/lib/avisos';
 import { aCentavos } from '@/web/shared/lib/formato';
 import { Button } from '@/web/shared/ui/button';
 import { Input } from '@/web/shared/ui/input';
@@ -67,6 +68,7 @@ async function guardar() {
   try {
     if (props.plan) {
       await renombrar.mutateAsync({ id: props.plan.id, nombre: nombre.value });
+      avisos.exito('Nombre del plan cambiado.');
     } else {
       const centavos = aCentavos(precio.value);
       if (centavos === null) {
@@ -88,6 +90,7 @@ async function guardar() {
         esPaseDiario: esPase.value,
         precioCentavos: centavos,
       });
+      avisos.exito('Plan creado.');
     }
     dialogo.value?.close();
   } catch (error) {
@@ -104,11 +107,11 @@ onMounted(() => {
   <dialog
     ref="dialogo"
     aria-labelledby="titulo-plan-dialogo"
-    class="bg-background text-foreground m-auto w-full max-w-lg rounded-xl border p-6 backdrop:bg-black/50"
+    class="bg-background text-foreground backdrop:bg-overlay m-auto w-full max-w-lg rounded-xl border p-6"
     @close="emit('cerrar')"
   >
     <form class="space-y-5" novalidate @submit.prevent="guardar">
-      <h2 id="titulo-plan-dialogo" class="text-lg font-semibold tracking-tight">
+      <h2 id="titulo-plan-dialogo" class="titulo-seccion">
         {{ plan ? `Cambiar el nombre de ${plan.nombre}` : 'Crear plan' }}
       </h2>
 

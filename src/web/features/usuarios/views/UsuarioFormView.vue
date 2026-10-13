@@ -186,7 +186,7 @@ async function cambiarEstado(activo: boolean) {
   <div class="max-w-3xl space-y-8">
     <RouterLink
       :to="{ name: 'usuarios' }"
-      class="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex items-center gap-1.5 rounded-sm text-sm outline-none focus-visible:ring-3"
+      class="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-sm text-sm outline-none focus-visible:ring-3"
     >
       <ArrowLeft class="size-4" aria-hidden="true" />
       Usuarios
@@ -201,15 +201,13 @@ async function cambiarEstado(activo: boolean) {
     />
 
     <template v-else-if="noExiste">
-      <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">
-        No se encontró ese usuario
-      </h1>
+      <h1 tabindex="-1" class="titulo-pantalla">No se encontró ese usuario</h1>
       <p class="text-muted-foreground text-sm">Volvé a la lista y elegilo desde ahí.</p>
     </template>
 
     <!-- ══ Crear ══ -->
     <form v-else-if="creando && data" class="space-y-8" novalidate @submit="crearUsuario">
-      <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">Crear usuario</h1>
+      <h1 tabindex="-1" class="titulo-pantalla">Crear usuario</h1>
 
       <div class="grid max-w-xl gap-4 sm:grid-cols-2">
         <CampoFormulario
@@ -259,7 +257,7 @@ async function cambiarEstado(activo: boolean) {
       </div>
 
       <section aria-labelledby="titulo-accesos" class="space-y-3">
-        <h2 id="titulo-accesos" class="text-lg font-semibold tracking-tight">Accesos</h2>
+        <h2 id="titulo-accesos" class="titulo-seccion">Accesos</h2>
         <p class="text-muted-foreground max-w-prose text-sm">
           Viene marcado lo que necesita recepción. Agregá o quitá lo que quieras; lo podés
           cambiar cuando quieras.
@@ -288,7 +286,7 @@ async function cambiarEstado(activo: boolean) {
     <!-- ══ Editar ══ -->
     <template v-else-if="existente && data">
       <div class="space-y-2">
-        <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">
+        <h1 tabindex="-1" class="titulo-pantalla">
           {{ existente.nombre }}
         </h1>
         <p class="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
@@ -311,9 +309,7 @@ async function cambiarEstado(activo: boolean) {
         </CampoFormulario>
 
         <section aria-labelledby="titulo-accesos" class="space-y-3">
-          <h2 id="titulo-accesos" class="text-lg font-semibold tracking-tight">
-            Accesos
-          </h2>
+          <h2 id="titulo-accesos" class="titulo-seccion">Accesos</h2>
           <p v-if="esElDueno" class="text-muted-foreground max-w-prose text-sm">
             El dueño tiene todos los accesos, siempre. No se le pueden quitar.
           </p>
@@ -338,9 +334,7 @@ async function cambiarEstado(activo: boolean) {
       </form>
 
       <section aria-labelledby="titulo-password" class="space-y-3 border-t pt-6">
-        <h2 id="titulo-password" class="text-lg font-semibold tracking-tight">
-          Cambiar contraseña
-        </h2>
+        <h2 id="titulo-password" class="titulo-seccion">Cambiar contraseña</h2>
         <p class="text-muted-foreground max-w-prose text-sm">
           Al cambiarla se cierran las sesiones abiertas de esta cuenta: tiene que volver a
           entrar con la nueva.
@@ -376,7 +370,7 @@ async function cambiarEstado(activo: boolean) {
         aria-labelledby="titulo-estado"
         class="space-y-3 border-t pt-6"
       >
-        <h2 id="titulo-estado" class="text-lg font-semibold tracking-tight">
+        <h2 id="titulo-estado" class="titulo-seccion">
           {{ existente.activo ? 'Desactivar usuario' : 'Reactivar usuario' }}
         </h2>
         <p class="text-muted-foreground max-w-prose text-sm">

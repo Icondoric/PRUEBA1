@@ -89,13 +89,13 @@ async function guardar(datos: DatosCliente) {
   <div class="space-y-6">
     <RouterLink
       :to="volver"
-      class="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex items-center gap-1.5 rounded-sm text-sm outline-none focus-visible:ring-3"
+      class="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-sm text-sm outline-none focus-visible:ring-3"
     >
       <ArrowLeft class="size-4" aria-hidden="true" />
       {{ editando ? 'Ficha del cliente' : 'Clientes' }}
     </RouterLink>
 
-    <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">
+    <h1 tabindex="-1" class="titulo-pantalla">
       {{ editando ? 'Editar cliente' : 'Registrar cliente' }}
     </h1>
 

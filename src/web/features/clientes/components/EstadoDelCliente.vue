@@ -13,6 +13,7 @@ import { useAccesos } from '@/web/features/sesion/api/sesion.api';
 import CampoFormulario from '@/web/shared/components/CampoFormulario.vue';
 import ConfirmarDialog from '@/web/shared/components/ConfirmarDialog.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
+import { avisos } from '@/web/shared/lib/avisos';
 import { esquemaDeFormulario } from '@/web/shared/lib/validacion';
 import { Button } from '@/web/shared/ui/button';
 import { useEstadoDeCliente } from '../api/clientes.api';
@@ -57,6 +58,7 @@ const confirmarBloqueo = handleSubmit(async (valores) => {
   try {
     await bloquear.mutateAsync({ id: props.cliente.id, motivo: valores.motivo });
     dialogoBloqueo.value?.close();
+    avisos.exito('Cliente bloqueado.');
   } catch (error) {
     setFieldError('motivo', mensajeDe(error));
     void enfocarMotivo();
@@ -64,11 +66,12 @@ const confirmarBloqueo = handleSubmit(async (valores) => {
 }, enfocarMotivo);
 
 // ── el resto: una confirmación o directo ──
-async function hacer(accion: () => Promise<unknown>) {
+async function hacer(accion: () => Promise<unknown>, hecho: string) {
   aviso.value = '';
   try {
     await accion();
     abierto.value = null;
+    avisos.exito(hecho);
   } catch (error) {
     aviso.value = mensajeDe(error);
   }
@@ -86,9 +89,7 @@ function abrirBaja() {
     aria-labelledby="titulo-estado-cliente"
     class="space-y-4 border-t pt-6"
   >
-    <h2 id="titulo-estado-cliente" class="text-lg font-semibold tracking-tight">
-      Acceso y estado
-    </h2>
+    <h2 id="titulo-estado-cliente" class="titulo-seccion">Acceso y estado</h2>
 
     <p v-if="aviso && abierto === null" role="alert" class="text-destructive text-sm">
       {{ aviso }}
@@ -109,7 +110,7 @@ function abrirBaja() {
         type="button"
         variant="outline"
         :disabled="desbloquear.isPending.value"
-        @click="hacer(() => desbloquear.mutateAsync(cliente.id))"
+        @click="hacer(() => desbloquear.mutateAsync(cliente.id), 'Cliente desbloqueado.')"
       >
         Desbloquear cliente
       </Button>
@@ -143,7 +144,7 @@ function abrirBaja() {
         type="button"
         variant="outline"
         :disabled="reactivar.isPending.value"
-        @click="hacer(() => reactivar.mutateAsync(cliente.id))"
+        @click="hacer(() => reactivar.mutateAsync(cliente.id), 'Cliente reactivado.')"
       >
         Reactivar cliente
       </Button>
@@ -153,12 +154,12 @@ function abrirBaja() {
       v-if="abierto === 'bloquear'"
       ref="dialogoBloqueo"
       aria-labelledby="titulo-bloqueo"
-      class="bg-background text-foreground m-auto w-full max-w-lg rounded-xl border p-6 backdrop:bg-black/50"
+      class="bg-background text-foreground backdrop:bg-overlay m-auto w-full max-w-lg rounded-xl border p-6"
       @close="abierto = null"
     >
       <form class="space-y-5" novalidate @submit="confirmarBloqueo">
         <div class="space-y-2">
-          <h2 id="titulo-bloqueo" class="text-lg font-semibold tracking-tight">
+          <h2 id="titulo-bloqueo" class="titulo-seccion">
             ¿Bloquear a {{ cliente.nombreCompleto }}?
           </h2>
           <p class="text-muted-foreground text-sm">
@@ -179,7 +180,7 @@ function abrirBaja() {
             v-model="motivo"
             rows="3"
             autofocus
-            class="border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-3"
+            class="border-input focus-visible:border-ring focus-visible:ring-ring aria-invalid:border-destructive w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-3"
           ></textarea>
         </CampoFormulario>
 
@@ -206,7 +207,12 @@ function abrirBaja() {
       destructivo
       :pendiente="darDeBaja.isPending.value"
       :error="aviso"
-      @confirmar="hacer(() => darDeBaja.mutateAsync(cliente.id))"
+      @confirmar="
+        hacer(
+          () => darDeBaja.mutateAsync(cliente.id),
+          'Cliente dado de baja. Su historial queda guardado.',
+        )
+      "
       @cerrar="abierto = null"
     >
       <p>Deja de aparecer en las listas y en los reportes, y no puede entrar.</p>

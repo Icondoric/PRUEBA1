@@ -141,7 +141,7 @@ const descripcionFiltros = computed(() => {
 <template>
   <div class="space-y-5">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">Clientes</h1>
+      <h1 tabindex="-1" class="titulo-pantalla">Clientes</h1>
       <Button v-if="puede('clientes.gestionar')" as-child>
         <RouterLink :to="{ name: 'cliente-nuevo' }">
           <Plus aria-hidden="true" />
@@ -222,7 +222,7 @@ const descripcionFiltros = computed(() => {
     <template v-else>
       <!-- Al refrescar o cambiar de página se sigue viendo lo anterior, atenuado. -->
       <div
-        class="min-h-96 rounded-lg border transition-opacity duration-150"
+        class="bg-card min-h-96 overflow-hidden rounded-xl border transition-opacity duration-150"
         :class="{ 'opacity-60': isPlaceholderData }"
         :aria-busy="isFetching"
       >
@@ -268,7 +268,7 @@ const descripcionFiltros = computed(() => {
               <TableCell class="truncate font-medium">
                 <RouterLink
                   :to="{ name: 'cliente-ficha', params: { id: cliente.id } }"
-                  class="focus-visible:ring-ring/50 rounded-sm outline-none hover:underline focus-visible:ring-3"
+                  class="focus-visible:ring-ring rounded-sm outline-none hover:underline focus-visible:ring-3"
                   @click.stop
                 >
                   {{ cliente.nombreCompleto }}

@@ -68,7 +68,7 @@ const guardar = handleSubmit(
 <template>
   <div class="max-w-md space-y-8">
     <div class="space-y-1">
-      <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">Mi cuenta</h1>
+      <h1 tabindex="-1" class="titulo-pantalla">Mi cuenta</h1>
       <p v-if="usuario" class="text-muted-foreground text-sm">
         {{ usuario.nombre }} · usuario {{ usuario.usuario }} ·
         {{ esDueno ? 'Dueño' : 'Recepción' }}
@@ -76,9 +76,7 @@ const guardar = handleSubmit(
     </div>
 
     <section aria-labelledby="titulo-mi-password" class="space-y-4">
-      <h2 id="titulo-mi-password" class="text-lg font-semibold tracking-tight">
-        Cambiar mi contraseña
-      </h2>
+      <h2 id="titulo-mi-password" class="titulo-seccion">Cambiar mi contraseña</h2>
       <p class="text-muted-foreground text-sm">
         Al cambiarla se cierra tu sesión en todos lados y volvés a entrar con la nueva.
       </p>

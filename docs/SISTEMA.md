@@ -56,6 +56,28 @@ Cada persona tiene su propio usuario; no se comparten.
 
 En el menú aparecen solo las secciones a las que cada uno tiene acceso.
 
+### Modo claro y modo oscuro
+
+El sistema se ve en **modo oscuro** salvo que se elija otra cosa. Para
+cambiarlo: **"Usar modo claro"** (o "Usar modo oscuro"), abajo en el menú o
+arriba a la derecha en la pantalla de ingreso.
+
+- La elección queda guardada **en ese navegador**: la PC de recepción puede
+  estar en oscuro y el celular del dueño en claro.
+- El claro conviene para mirar los reportes en la calle, con sol.
+- La pantalla de check-in no tiene el botón: usa lo que se haya elegido antes.
+
+### Avisos
+
+Cuando algo se hace bien y el resultado no queda a la vista (se cerró una
+ventana o se cambió de pantalla), aparece un **aviso abajo a la derecha**:
+"Pago anulado.", "Cliente bloqueado.", "Plan creado.", "Precio agregado.".
+
+- Se va solo a los pocos segundos. Mientras el mouse está encima, se queda.
+- Se puede cerrar con la ✕.
+- Los errores de un formulario no salen ahí: siguen apareciendo al lado del
+  campo que hay que corregir.
+
 ## 3. Palabras que usa el sistema
 
 | Palabra | Qué significa |

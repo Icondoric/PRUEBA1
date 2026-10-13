@@ -123,7 +123,7 @@ onMounted(() => {
   <dialog
     ref="dialogo"
     aria-labelledby="titulo-pase"
-    class="bg-background text-foreground m-auto w-full max-w-xl rounded-xl border p-8 backdrop:bg-black/60"
+    class="bg-background text-foreground backdrop:bg-overlay m-auto w-full max-w-xl rounded-xl border p-8"
     @close="emit('cerrar')"
   >
     <form class="space-y-6" autocomplete="off" @submit.prevent="cobrar">
@@ -158,7 +158,7 @@ onMounted(() => {
             aria-controls="pase-parecidos"
             :aria-expanded="opciones.length > 0"
             :aria-activedescendant="elegido >= 0 ? `pase-opcion-${elegido}` : undefined"
-            class="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-12 w-full rounded-md border bg-transparent px-3 text-xl outline-none focus-visible:ring-3"
+            class="border-input focus-visible:border-ring focus-visible:ring-ring h-12 w-full rounded-md border bg-transparent px-3 text-xl outline-none focus-visible:ring-3"
             @keydown.down.prevent="mover(1)"
             @keydown.up.prevent="mover(-1)"
           />

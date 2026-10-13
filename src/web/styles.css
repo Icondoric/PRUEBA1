@@ -1,102 +1,11 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/*
- * Tokens del sistema visual (los de shadcn-vue, base neutral). Son la única
- * fuente de colores y radios: los componentes usan `bg-background`,
- * `text-muted-foreground`, etc., nunca un color escrito a mano.
- *
- * El modo oscuro sigue la preferencia del sistema operativo; no hay
- * interruptor. `dark:` de Tailwind ya responde a esa misma media query.
- */
+/* Colores y radios: una sola fuente. Las reglas están en docs/ESTILO.md. */
+@import './shared/styles/tokens.css';
 
-:root {
-  --radius: 0.5rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.47 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.52 0.21 27);
-  --border: oklch(0.9 0 0);
-  --input: oklch(0.78 0 0);
-  --ring: oklch(0.45 0 0);
-
-  /*
-   * Los tres colores del check-in. Son bloques de pantalla completa que se
-   * leen desde lejos, así que valen igual en modo claro y oscuro. Cada par
-   * fondo/texto supera 4.5:1 de contraste.
-   */
-  --acceso-ok: oklch(0.45 0.13 150);
-  --acceso-ok-foreground: oklch(1 0 0);
-  --acceso-aviso: oklch(0.84 0.16 88);
-  --acceso-aviso-foreground: oklch(0.2 0.03 88);
-  --acceso-rechazo: oklch(0.47 0.19 27);
-  --acceso-rechazo-foreground: oklch(1 0 0);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.72 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.72 0.18 22);
-    --border: oklch(1 0 0 / 14%);
-    --input: oklch(1 0 0 / 32%);
-    --ring: oklch(0.75 0 0);
-  }
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-acceso-ok: var(--acceso-ok);
-  --color-acceso-ok-foreground: var(--acceso-ok-foreground);
-  --color-acceso-aviso: var(--acceso-aviso);
-  --color-acceso-aviso-foreground: var(--acceso-aviso-foreground);
-  --color-acceso-rechazo: var(--acceso-rechazo);
-  --color-acceso-rechazo-foreground: var(--acceso-rechazo-foreground);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
+/* El modo oscuro lo decide la clase `.dark` en <html>, no el sistema operativo. */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   * {
@@ -106,7 +15,6 @@
   html {
     /* Fuente del sistema: ya trae el ajuste óptico y de legibilidad de cada SO. */
     font-family: system-ui, sans-serif;
-    color-scheme: light dark;
   }
 
   body {
@@ -117,6 +25,102 @@
   h1:focus {
     outline: none;
   }
+}
+
+/*
+ * Jerarquía tipográfica. Tamaño, peso, interletrado y altura de línea van
+ * juntos: el texto grande se aprieta, el chico no.
+ */
+@utility titulo-pantalla {
+  font-size: 1.875rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+@utility titulo-seccion {
+  font-size: 1.25rem;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* El número que importa de una caja: cobrado hoy, socios activos, días restantes. */
+@utility cifra {
+  font-size: 2.25rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Barra translúcida con contenido que pasa por debajo. Es cara: a lo sumo una
+ * o dos por pantalla, y nunca en el check-in.
+ */
+@utility vidrio {
+  background-color: color-mix(in oklab, var(--background) 78%, transparent);
+  backdrop-filter: blur(16px) saturate(160%);
+
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--background);
+    backdrop-filter: none;
+  }
+}
+
+/*
+ * Movimiento. Solo CSS, corto y con `transform` y `opacity`: nada bloquea el
+ * teclado ni espera a que termine. Con movimiento reducido se anula abajo.
+ */
+@theme {
+  --animate-entrar: entrar 180ms ease-out;
+  --animate-crecer: crecer 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  @keyframes entrar {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  @keyframes crecer {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  @keyframes aparecer {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+  }
+
+  @keyframes fundir {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+/* Cada pantalla entra con un movimiento mínimo al navegar. */
+#contenido > * {
+  animation: var(--animate-entrar);
+}
+
+/* Los diálogos llegan desde abajo, con el fondo que se atenúa a la par. */
+dialog[open] {
+  animation: aparecer 160ms ease-out;
+}
+
+dialog[open]::backdrop {
+  animation: fundir 160ms ease-out;
+}
+
+/* El check-in es un kiosco: ahí no se mueve nada. */
+.sin-marca dialog[open],
+.sin-marca dialog[open]::backdrop {
+  animation: none;
 }
 
 /* Movimiento reducido: los cambios de estado siguen, sin desplazamientos. */
