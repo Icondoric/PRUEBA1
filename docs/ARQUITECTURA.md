@@ -71,6 +71,41 @@ convierte en respuestas. El contrato es siempre el mismo:
   falla técnica de mensaje amable es como se pierden datos sin que nadie se
   entere.
 
+## Quién puede qué: un solo lugar
+
+Sin sesión no se ve nada, y con sesión cada uno ve lo que el dueño le dio.
+
+```
+src/modules/usuarios/domain/permisos.ts   el catálogo de accesos (qué se puede dar)
+src/server/acceso.ts                      la tabla: qué acceso pide cada ruta
+src/server/middleware/sesion.ts           el guardia que la aplica
+```
+
+- **Las rutas y los servicios no revisan accesos.** Si un pedido llegó hasta
+  ellos, el guardia ya lo autorizó. Así no hay un `if (esAdmin)` distinto en
+  cada módulo, y la respuesta a "¿quién puede anular un pago?" se lee en una
+  tabla.
+- **Falla cerrado.** Una ruta que no está en la tabla responde 403 a todos,
+  dueño incluido. Un test recorre las rutas registradas y exige que cada una
+  tenga su regla: olvidarse de anotar un endpoint no lo deja abierto.
+- La excepción es cuando la decisión depende del contenido del pedido ("¿este
+  rango incluye otro día?"). Eso lo decide el servicio, que recibe el dato ya
+  resuelto por parámetro (`puedeVerOtrasFechas`), sin conocer la sesión.
+- **Quién registró algo sale de la sesión** (`operadorActual(c)`), nunca de
+  un dato que mande el navegador.
+
+### `contrato.ts`: lo que el navegador puede importar
+
+La regla es "un módulo se importa por su `index.ts`". El módulo `usuarios`
+tiene una salvedad: su servicio usa `node:crypto`, que en un navegador no
+existe. Para los VALORES que el frontend necesita (el catálogo, `puede()`,
+los esquemas) existe `src/modules/usuarios/contrato.ts`, que solo reexporta
+reglas puras. Los tipos se siguen importando del `index.ts` con
+`import type`.
+
+Si otro módulo empieza a usar APIs de Node en su servicio, lleva su propio
+`contrato.ts`.
+
 ## Frontend y backend: un solo contrato
 
 Hono exporta el tipo de sus rutas; Vue lo importa:
@@ -134,5 +169,5 @@ La base de los tests se crea con **las migraciones reales**, no con un
 `CREATE TABLE` escrito a mano. Si una migración rompe algo, los tests se
 enteran; si no, estarías validando una base paralela que se le parece.
 
-Hoy: **183 tests**. Ese número es el contrato que el agente no puede romper sin
+Hoy: **351 tests**. Ese número es el contrato que el agente no puede romper sin
 que se note.

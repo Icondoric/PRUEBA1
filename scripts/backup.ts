@@ -19,7 +19,14 @@
  * base pesa pocos MB.
  */
 
-import { existsSync, mkdirSync, readdirSync, statSync, copyFileSync, rmSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  copyFileSync,
+  rmSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
 
@@ -63,6 +70,18 @@ export function respaldar(opciones: OpcionesBackup): ResultadoBackup {
     db.prepare('VACUUM INTO ?').run(destino);
   } finally {
     db.close();
+  }
+
+  // La copia no necesita las sesiones abiertas: quien restaure vuelve a
+  // ingresar. Así un respaldo que alguien encuentre no trae ninguna.
+  const copia = new Database(destino);
+  try {
+    const tieneSesiones = copia
+      .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'sesiones'")
+      .get();
+    if (tieneSesiones) copia.prepare('DELETE FROM sesiones').run();
+  } finally {
+    copia.close();
   }
 
   const bytes = statSync(destino).size;

@@ -3,7 +3,7 @@
  * caja, los pagos de un cliente, y anular.
  */
 
-import { NoEncontradoError } from '@/lib/errors';
+import { NoEncontradoError, SinPermisoError } from '@/lib/errors';
 import type { FechaISO } from '@/lib/fechas';
 import { rangoDeFechas } from '@/lib/rango';
 import { type ServicioClientes, nombreCompleto } from '@/modules/clientes';
@@ -36,8 +36,13 @@ export function crearServicioPagos(
     listar(
       filtro: { desde?: string | null; hasta?: string | null; metodo?: Metodo },
       hoy: FechaISO,
+      /** Sin este acceso, la caja se ve solo del día de hoy. */
+      puedeVerOtrasFechas: boolean,
     ) {
       const rango = rangoDeFechas(filtro, hoy);
+      if (!puedeVerOtrasFechas && (rango.desde !== hoy || rango.hasta !== hoy)) {
+        throw new SinPermisoError('Tu usuario solo puede ver lo cobrado hoy');
+      }
       const filas = repo.enRango({ ...rango, metodo: filtro.metodo });
 
       return {
@@ -53,12 +58,15 @@ export function crearServicioPagos(
       return { pagos: repo.deCliente(clienteId).map(aVista) };
     },
 
-    /** Anula un pago con motivo. Cancela también la membresía que pagaba. */
-    anular(id: number, motivo: string) {
+    /**
+     * Anula un pago con motivo. Cancela también la membresía que pagaba, y
+     * deja registrado quién lo anuló y cuándo.
+     */
+    anular(id: number, motivo: string, usuarioId: number, ahora: Date) {
       const pago = repo.porId(id);
       if (!pago) throw new NoEncontradoError('el pago', id);
 
-      const anulado = repo.anular(id, prepararAnulacion(pago, motivo));
+      const anulado = repo.anular(id, prepararAnulacion(pago, motivo), usuarioId, ahora);
 
       return {
         id: anulado.id,

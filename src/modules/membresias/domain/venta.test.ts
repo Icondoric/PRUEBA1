@@ -164,6 +164,21 @@ describe('cotizarVenta', () => {
     ).toThrow(ReglaDeNegocioError);
   });
 
+  it('rechaza una fecha de inicio a más de un año', () => {
+    const cotizar = (inicioForzado: string) =>
+      cotizarVenta({
+        hoy: HOY,
+        plan: mensual,
+        precios,
+        fechaFinAnterior: null,
+        inicioForzado,
+      });
+
+    expect(cotizar('2027-03-10').periodo.fechaInicio).toBe('2027-03-10');
+    expect(() => cotizar('2027-03-11')).toThrow(ReglaDeNegocioError);
+    expect(() => cotizar('9999-12-31')).toThrow(ReglaDeNegocioError);
+  });
+
   it('rechaza una fecha de inicio que no es una fecha', () => {
     expect(() =>
       cotizarVenta({

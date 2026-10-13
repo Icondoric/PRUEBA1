@@ -9,7 +9,7 @@
  * una fila nueva. El historial es el producto.
  */
 
-import { and, asc, desc, eq, ne } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
 import type { DB } from '@/lib/db';
 import { membresias, pagos, planPrecios, planes } from '@/lib/db/schema';
 
@@ -87,6 +87,23 @@ export function crearRepoMembresias(db: DB) {
         .leftJoin(planPrecios, eq(planPrecios.id, membresias.planPrecioId))
         .where(eq(membresias.clienteId, clienteId))
         .orderBy(desc(membresias.fechaInicio), desc(membresias.id))
+        .all();
+    },
+
+    /** Lo justo para saber la situación de varios clientes en una sola consulta. */
+    paraCoberturas(clienteIds: number[]) {
+      if (clienteIds.length === 0) return [];
+      return db
+        .select({
+          clienteId: membresias.clienteId,
+          fechaInicio: membresias.fechaInicio,
+          fechaFin: membresias.fechaFin,
+          estado: membresias.estado,
+          esPaseDiario: planes.esPaseDiario,
+        })
+        .from(membresias)
+        .innerJoin(planes, eq(planes.id, membresias.planId))
+        .where(inArray(membresias.clienteId, clienteIds))
         .all();
     },
 

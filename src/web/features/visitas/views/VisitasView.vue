@@ -12,7 +12,7 @@ import CampoFormulario from '@/web/shared/components/CampoFormulario.vue';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
 import { formatearFecha, plural } from '@/web/shared/lib/formato';
-import { esquemaDeFormulario } from '@/web/shared/lib/validacion';
+import { esquemaDeFormulario, useErroresDelServidor } from '@/web/shared/lib/validacion';
 import { Button } from '@/web/shared/ui/button';
 import { Input } from '@/web/shared/ui/input';
 import {
@@ -48,7 +48,7 @@ const esMotivo = (valor: unknown): valor is MotivoVisita =>
 const { data, error, isFetching, refetch } = useVisitas();
 const registrar = useRegistrarVisita();
 
-const { handleSubmit, defineField, errors, setFieldError, resetForm } = useForm({
+const { handleSubmit, defineField, errors, values, resetForm } = useForm({
   validationSchema: esquemaDeFormulario(visitaInputSchema),
   initialValues: {
     nombre: '',
@@ -58,6 +58,8 @@ const { handleSubmit, defineField, errors, setFieldError, resetForm } = useForm(
     nota: '',
   },
 });
+// Los errores que devuelve el servidor van aparte: ver useErroresDelServidor.
+const { delServidor, ponerError } = useErroresDelServidor(values);
 
 const alSalir = (estado: { errors: string[] }) => ({
   validateOnBlur: true,
@@ -98,7 +100,7 @@ const guardar = handleSubmit(
     } catch (error) {
       const campo = error instanceof ErrorDeApi ? error.detalles.campo : null;
       if (error instanceof ErrorDeApi && esCampo(campo)) {
-        setFieldError(campo, error.message);
+        ponerError(campo, error.message);
         void enfocar(campo);
       } else {
         aviso.value =
@@ -119,177 +121,202 @@ const guardar = handleSubmit(
 <template>
   <div class="space-y-8">
     <div class="space-y-1">
-      <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">Visitas</h1>
+      <h1 tabindex="-1" class="titulo-pantalla">Visitas</h1>
       <p class="text-muted-foreground max-w-prose text-sm">
         Entradas gratis: cortesías, clases de prueba y acompañantes. Si la persona pagó,
         no va acá: se le vende un pase por sesión.
       </p>
     </div>
 
-    <section aria-labelledby="titulo-nueva-visita" class="space-y-4">
-      <h2 id="titulo-nueva-visita" class="text-lg font-semibold tracking-tight">
-        Registrar una visita
-      </h2>
+    <div
+      class="space-y-8 xl:grid xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] xl:items-start xl:gap-10 xl:space-y-0"
+    >
+      <section aria-labelledby="titulo-nueva-visita" class="space-y-4">
+        <h2 id="titulo-nueva-visita" class="titulo-seccion">Registrar una visita</h2>
 
-      <form class="max-w-2xl space-y-5" novalidate @submit="guardar">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <CampoFormulario
-            id="visita-nombre"
-            v-slot="{ control }"
-            etiqueta="Nombre"
-            :error="errors.nombre"
-          >
-            <Input
-              v-bind="{ ...control, ...nombreAttrs }"
-              v-model="nombre"
-              autocomplete="off"
-              required
-            />
-          </CampoFormulario>
+        <form class="max-w-2xl space-y-5" novalidate @submit="guardar">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <CampoFormulario
+              id="visita-nombre"
+              v-slot="{ control }"
+              etiqueta="Nombre"
+              :error="errors.nombre ?? delServidor.nombre"
+            >
+              <Input
+                v-bind="{ ...control, ...nombreAttrs }"
+                v-model="nombre"
+                autocomplete="off"
+                required
+              />
+            </CampoFormulario>
 
-          <CampoFormulario
-            id="visita-motivo"
-            v-slot="{ control }"
-            etiqueta="Motivo"
-            :error="errors.motivo"
-          >
-            <Select :model-value="motivo" @update:model-value="elegirMotivo">
-              <SelectTrigger v-bind="control" class="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem
-                  v-for="opcion in MOTIVOS_VISITA"
-                  :key="opcion"
-                  :value="opcion"
-                >
-                  {{ NOMBRE_MOTIVO[opcion] }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </CampoFormulario>
-
-          <CampoFormulario
-            id="visita-invitadoPor"
-            v-slot="{ control }"
-            etiqueta="Invitado por"
-            :opcional="motivo !== 'acompanante'"
-            ayuda="Número de socio o CI de quien lo trae."
-            :error="errors.invitadoPor"
-          >
-            <Input
-              v-bind="{ ...control, ...invitadoPorAttrs }"
-              :model-value="invitadoPor ?? ''"
-              inputmode="numeric"
-              autocomplete="off"
-              @update:model-value="invitadoPor = String($event)"
-            />
-          </CampoFormulario>
-
-          <CampoFormulario
-            id="visita-telefono"
-            v-slot="{ control }"
-            etiqueta="Teléfono"
-            opcional
-            :error="errors.telefono"
-          >
-            <Input
-              v-bind="{ ...control, ...telefonoAttrs }"
-              :model-value="telefono ?? ''"
-              type="tel"
-              inputmode="tel"
-              autocomplete="off"
-              @update:model-value="telefono = String($event)"
-            />
-          </CampoFormulario>
-
-          <CampoFormulario
-            id="visita-nota"
-            v-slot="{ control }"
-            etiqueta="Nota"
-            opcional
-            :error="errors.nota"
-            class="sm:col-span-2"
-          >
-            <Input
-              v-bind="{ ...control, ...notaAttrs }"
-              :model-value="nota ?? ''"
-              autocomplete="off"
-              @update:model-value="nota = String($event)"
-            />
-          </CampoFormulario>
-        </div>
-
-        <p v-if="aviso" role="alert" class="text-destructive text-sm">{{ aviso }}</p>
-
-        <div class="flex flex-wrap items-center gap-3">
-          <Button type="submit" :disabled="registrar.isPending.value">
-            {{ registrar.isPending.value ? 'Registrando…' : 'Registrar visita' }}
-          </Button>
-          <p v-if="confirmacion" role="status" class="text-sm">{{ confirmacion }}</p>
-        </div>
-      </form>
-    </section>
-
-    <section aria-labelledby="titulo-visitas" class="space-y-4">
-      <h2 id="titulo-visitas" class="text-lg font-semibold tracking-tight">
-        Últimos 30 días
-      </h2>
-
-      <ErrorDeCarga
-        v-if="error && !data"
-        titulo="No se pudieron cargar las visitas"
-        :mensaje="error.message"
-        :reintentando="isFetching"
-        @reintentar="refetch()"
-      />
-
-      <template v-else-if="data">
-        <div v-if="data.visitas.length > 0" class="rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead class="w-28">Fecha</TableHead>
-                <TableHead>Nombre</TableHead>
-                <TableHead class="w-40">Motivo</TableHead>
-                <TableHead>Invitado por</TableHead>
-                <TableHead>Nota</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-for="visita in data.visitas" :key="visita.id" class="h-11">
-                <TableCell class="tabular-nums">{{
-                  formatearFecha(visita.fecha)
-                }}</TableCell>
-                <TableCell class="font-medium">
-                  {{ visita.nombre }}
-                  <span
-                    v-if="visita.telefono"
-                    class="text-muted-foreground font-normal tabular-nums"
+            <CampoFormulario
+              id="visita-motivo"
+              v-slot="{ control }"
+              etiqueta="Motivo"
+              :error="errors.motivo ?? delServidor.motivo"
+            >
+              <Select :model-value="motivo" @update:model-value="elegirMotivo">
+                <SelectTrigger v-bind="control" class="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="opcion in MOTIVOS_VISITA"
+                    :key="opcion"
+                    :value="opcion"
                   >
-                    · {{ visita.telefono }}
-                  </span>
-                </TableCell>
-                <TableCell>{{ NOMBRE_MOTIVO[visita.motivo] }}</TableCell>
-                <TableCell>
-                  <template v-if="visita.anfitrion">
-                    {{ visita.anfitrion.nombreCompleto }}
-                    <span class="text-muted-foreground tabular-nums">
-                      · nº {{ visita.anfitrion.nroSocio }}
-                    </span>
-                  </template>
-                  <template v-else>—</template>
-                </TableCell>
-                <TableCell class="whitespace-normal">{{ visita.nota ?? '—' }}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
+                    {{ NOMBRE_MOTIVO[opcion] }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </CampoFormulario>
 
-        <p v-else class="text-muted-foreground text-sm">
-          No hubo visitas en los últimos 30 días.
-        </p>
-      </template>
-    </section>
+            <CampoFormulario
+              id="visita-invitadoPor"
+              v-slot="{ control }"
+              etiqueta="Invitado por"
+              :opcional="motivo !== 'acompanante'"
+              ayuda="Número de socio o CI de quien lo trae."
+              :error="errors.invitadoPor ?? delServidor.invitadoPor"
+            >
+              <Input
+                v-bind="{ ...control, ...invitadoPorAttrs }"
+                :model-value="invitadoPor ?? ''"
+                inputmode="numeric"
+                autocomplete="off"
+                @update:model-value="invitadoPor = String($event)"
+              />
+            </CampoFormulario>
+
+            <CampoFormulario
+              id="visita-telefono"
+              v-slot="{ control }"
+              etiqueta="Teléfono"
+              opcional
+              :error="errors.telefono ?? delServidor.telefono"
+            >
+              <Input
+                v-bind="{ ...control, ...telefonoAttrs }"
+                :model-value="telefono ?? ''"
+                type="tel"
+                inputmode="tel"
+                autocomplete="off"
+                @update:model-value="telefono = String($event)"
+              />
+            </CampoFormulario>
+
+            <CampoFormulario
+              id="visita-nota"
+              v-slot="{ control }"
+              etiqueta="Nota"
+              opcional
+              :error="errors.nota ?? delServidor.nota"
+              class="sm:col-span-2"
+            >
+              <Input
+                v-bind="{ ...control, ...notaAttrs }"
+                :model-value="nota ?? ''"
+                autocomplete="off"
+                @update:model-value="nota = String($event)"
+              />
+            </CampoFormulario>
+          </div>
+
+          <p v-if="aviso" role="alert" class="text-destructive text-sm">{{ aviso }}</p>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <Button type="submit" :disabled="registrar.isPending.value">
+              {{ registrar.isPending.value ? 'Registrando…' : 'Registrar visita' }}
+            </Button>
+            <p v-if="confirmacion" role="status" class="text-sm">{{ confirmacion }}</p>
+          </div>
+        </form>
+      </section>
+
+      <section aria-labelledby="titulo-visitas" class="min-w-0 space-y-4">
+        <h2 id="titulo-visitas" class="titulo-seccion">Últimos 30 días</h2>
+
+        <ErrorDeCarga
+          v-if="error && !data"
+          titulo="No se pudieron cargar las visitas"
+          :mensaje="error.message"
+          :reintentando="isFetching"
+          @reintentar="refetch()"
+        />
+
+        <template v-else-if="data">
+          <div
+            v-if="data.visitas.length > 0"
+            class="bg-card overflow-hidden rounded-xl border"
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead class="w-28">Fecha</TableHead>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead class="hidden w-40 sm:table-cell">Motivo</TableHead>
+                  <TableHead class="hidden lg:table-cell">Invitado por</TableHead>
+                  <TableHead class="hidden md:table-cell">Nota</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="visita in data.visitas" :key="visita.id" class="h-11">
+                  <TableCell class="tabular-nums">{{
+                    formatearFecha(visita.fecha)
+                  }}</TableCell>
+                  <TableCell class="font-medium whitespace-normal">
+                    {{ visita.nombre }}
+                    <span
+                      v-if="visita.telefono"
+                      class="text-muted-foreground font-normal tabular-nums"
+                    >
+                      · {{ visita.telefono }}
+                    </span>
+                    <!-- Lo que en angosto no entra como columna, va debajo del nombre. -->
+                    <span
+                      class="text-muted-foreground block text-xs font-normal sm:hidden"
+                    >
+                      {{ NOMBRE_MOTIVO[visita.motivo] }}
+                    </span>
+                    <span
+                      v-if="visita.anfitrion"
+                      class="text-muted-foreground block text-xs font-normal lg:hidden"
+                    >
+                      Invitado por {{ visita.anfitrion.nombreCompleto }}
+                    </span>
+                    <span
+                      v-if="visita.nota"
+                      class="text-muted-foreground block text-xs font-normal md:hidden"
+                    >
+                      {{ visita.nota }}
+                    </span>
+                  </TableCell>
+                  <TableCell class="hidden sm:table-cell">{{
+                    NOMBRE_MOTIVO[visita.motivo]
+                  }}</TableCell>
+                  <TableCell class="hidden lg:table-cell">
+                    <template v-if="visita.anfitrion">
+                      {{ visita.anfitrion.nombreCompleto }}
+                      <span class="text-muted-foreground tabular-nums">
+                        · nº {{ visita.anfitrion.nroSocio }}
+                      </span>
+                    </template>
+                    <template v-else>—</template>
+                  </TableCell>
+                  <TableCell class="hidden whitespace-normal md:table-cell">
+                    {{ visita.nota ?? '—' }}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+
+          <p v-else class="text-muted-foreground text-sm">
+            No hubo visitas en los últimos 30 días.
+          </p>
+        </template>
+      </section>
+    </div>
   </div>
 </template>

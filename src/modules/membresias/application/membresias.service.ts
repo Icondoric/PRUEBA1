@@ -9,7 +9,12 @@
 import { NoEncontradoError, ReglaDeNegocioError } from '@/lib/errors';
 import type { FechaISO } from '@/lib/fechas';
 import type { ServicioClientes } from '@/modules/clientes';
-import { coberturaDelCliente, estadoMembresia } from '../domain/estado';
+import {
+  type Cobertura,
+  coberturaDelCliente,
+  estaPorVencer,
+  estadoMembresia,
+} from '../domain/estado';
 import { SinPrecioVigenteError, resolverPrecio } from '../domain/precios';
 import { cotizarVenta } from '../domain/venta';
 import type { PagoFila, RepoMembresias } from '../infrastructure/membresias.repo';
@@ -28,7 +33,17 @@ export interface EntradaVender extends EntradaCotizar {
 export function crearServicioMembresias(
   repo: RepoMembresias,
   clientes: Pick<ServicioClientes, 'obtener'>,
+  /** Con cuántos días de anticipación se avisa: el mismo aviso del check-in. */
+  opciones: { diasDeAviso?: number } = {},
 ) {
+  const diasDeAviso = opciones.diasDeAviso ?? 3;
+
+  /** La situación, con el dato de si conviene avisarle que renueve. */
+  const conAviso = (cobertura: Cobertura) => ({
+    ...cobertura,
+    porVencer: estaPorVencer(cobertura, diasDeAviso),
+  });
+
   function preparar(entrada: EntradaCotizar, hoy: FechaISO) {
     const cliente = clientes.obtener(entrada.clienteId);
     if (!cliente.activo) {
@@ -126,6 +141,26 @@ export function crearServicioMembresias(
       };
     },
 
+    /**
+     * En qué situación está cada uno de estos clientes. Para la lista: una
+     * sola consulta para toda la página, en vez de abrir ficha por ficha.
+     */
+    coberturas(clienteIds: number[], hoy: FechaISO) {
+      const filas = repo.paraCoberturas(clienteIds);
+      return {
+        hoy,
+        coberturas: clienteIds.map((clienteId) => ({
+          clienteId,
+          ...conAviso(
+            coberturaDelCliente(
+              filas.filter((fila) => fila.clienteId === clienteId),
+              hoy,
+            ),
+          ),
+        })),
+      };
+    },
+
     /** Historial del cliente y en qué situación está hoy. */
     historial(clienteId: number, hoy: FechaISO) {
       clientes.obtener(clienteId); // 404 si no existe
@@ -133,7 +168,7 @@ export function crearServicioMembresias(
       const filas = repo.deCliente(clienteId);
 
       return {
-        cobertura: coberturaDelCliente(filas, hoy),
+        cobertura: conAviso(coberturaDelCliente(filas, hoy)),
         membresias: filas.map((fila) => ({
           ...fila,
           estado: estadoMembresia(fila, hoy),
@@ -148,3 +183,4 @@ export type PlanesConPrecio = ReturnType<ServicioMembresias['planesConPrecio']>;
 export type CotizacionVista = ReturnType<ServicioMembresias['cotizar']>;
 export type VentaRegistrada = ReturnType<ServicioMembresias['vender']>;
 export type HistorialMembresias = ReturnType<ServicioMembresias['historial']>;
+export type CoberturasDeClientes = ReturnType<ServicioMembresias['coberturas']>;

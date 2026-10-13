@@ -6,13 +6,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { DB } from '@/lib/db';
 import { clientes, pagos, visitas } from '@/lib/db/schema';
 import { hoyEnZona, sumarDias } from '@/lib/fechas';
-import { crearApp } from '@/server';
-import { dbDePrueba } from '@/test/db';
+import { appConSesion, dbDePrueba } from '@/test/db';
 
 const hoy = hoyEnZona();
 
 let db: DB;
-let app: ReturnType<typeof crearApp>;
+let app: ReturnType<typeof appConSesion>;
 
 const post = (ruta: string, body: Record<string, unknown>) =>
   app.request(ruta, {
@@ -26,7 +25,7 @@ const registrar = (body: Record<string, unknown>) =>
 
 beforeEach(() => {
   db = dbDePrueba();
-  app = crearApp(db);
+  app = appConSesion(db);
 });
 
 describe('POST /api/visitas', () => {

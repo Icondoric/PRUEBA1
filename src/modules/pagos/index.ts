@@ -7,15 +7,15 @@
 import type { DB } from '@/lib/db';
 import type { ServicioClientes } from '@/modules/clientes';
 import { crearServicioPagos } from './application/pagos.service';
-import { rutasPagos } from './http/routes';
+import { type DepsDePagos, rutasPagos } from './http/routes';
 import { crearRepoPagos } from './infrastructure/pagos.repo';
 
 export function moduloPagos(
   db: DB,
-  deps: { clientes: Pick<ServicioClientes, 'obtener'> },
+  deps: { clientes: Pick<ServicioClientes, 'obtener'> } & DepsDePagos,
 ) {
   const servicio = crearServicioPagos(crearRepoPagos(db), deps.clientes);
-  return { servicio, rutas: rutasPagos(servicio) };
+  return { servicio, rutas: rutasPagos(servicio, deps) };
 }
 
 export type {

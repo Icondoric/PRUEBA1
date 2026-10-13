@@ -1,8 +1,9 @@
 # Pasada visual — pendiente para el final
 
-**Cuándo:** recién cuando estén construidas todas las pantallas (después de la
-última rebanada). **No antes.** Hasta entonces las pantallas se hacen con los
-componentes y tokens tal como están, y cada cosa nueva se anota en este archivo.
+**Cuándo:** el plan original era hacerla al final. El 2026-10-11 el usuario
+decidió adelantarla para una demo al dueño, en una conversación aparte de la
+que sigue con la funcionalidad. Quien trabaje en funcionalidad sigue usando los
+componentes y tokens como estén y anota acá cada pantalla nueva.
 
 **Qué es:** darle al sistema el aspecto que describe la skill `apple-design`
 (`.claude/skills/apple-design/SKILL.md`). Hoy la skill está aplicada solo en el
@@ -11,6 +12,158 @@ fábrica de shadcn-vue, y por eso se ve genérico.
 
 **Qué NO es:** no se toca lógica, rutas, esquemas ni nada de `src/modules/`.
 Es solo `src/web/`.
+
+## Estado (2026-10-11) — dirección decidida y base hecha
+
+**Decidido:** ámbar del logo sobre negro cálido, dos modos con el oscuro de
+fábrica. Todo está en `docs/ESTILO.md`; esa es la referencia, no la sección
+"Dirección visual propuesta" de abajo, que queda como historia.
+
+**Hecho y revisado en los dos modos** (capturas a 1280 y a 390 px):
+
+- `src/web/shared/styles/tokens.css`: marca, claro, oscuro y el ámbito
+  `sin-marca` del check-in. `styles.css` solo lo importa.
+- Interruptor de modo (`shared/lib/tema.ts`, `shared/components/InterruptorDeTema.vue`),
+  al pie del menú y en el ingreso. `index.html` pone el oscuro antes de pintar.
+- Sin colores literales: `text-white` y `backdrop:bg-black/…` pasaron a tokens.
+- Foco a opacidad plena (`ring-ring`), tablas a `px-3 py-2`.
+- Check-in: nombres `estado-*`, sin color de marca, y las dos líneas chicas del
+  pie a tamaño legible.
+- Pantalla de muestra en `/muestra` (`features/muestra/`), solo con `pnpm dev`.
+
+**Segunda tanda (mismo día) — forma y jerarquía**, revisada en los dos modos
+en `/muestra`, Clientes y Reportes:
+
+- Radios: 12 px en controles, 16 px en tarjetas (`--radius` en `tokens.css`).
+- Jerarquía tipográfica como utilidades en `styles.css`: `titulo-pantalla`
+  (todos los `h1`), `titulo-seccion` (los `h2`), `cifra` (el número de una
+  caja) y `vidrio` (barra translúcida, con respaldo sólido).
+- `button/`: 40 px de alto, respuesta al presionar, principal en negrita.
+  `input/` y `select/` a 40 px.
+- Componentes nuevos: `ui/checkbox/` (casilla propia) y
+  `components/ControlSegmentado.vue` (elegir entre pocas opciones). **Todavía
+  no se usan en las pantallas reales:** reemplazan las casillas nativas (venta,
+  accesos, plan) y los radios de "cómo pagó" cuando le toque a cada pantalla.
+- `layout/AppLayout.vue`: lugar del logo (hoy una "G"), sección activa con
+  tinte ámbar, iniciales de quien está adentro; en angosto, barra fija
+  translúcida.
+
+**Tercera tanda (2026-10-12) — vida**, revisada en los dos modos:
+
+- Avisos de confirmación: `shared/lib/avisos.ts` y
+  `shared/components/PilaDeAvisos.vue`, montados en `App.vue`. Reemplazan el
+  recuadro de "Cliente registrado" de la ficha y de Usuarios, y confirman lo
+  que antes no confirmaba nada: anular pago, bloquear / desbloquear / dar de
+  baja / reactivar cliente, y altas y cambios de planes y precios.
+- Movimiento por CSS en `styles.css`: entrada de pantalla, diálogos, barras.
+- Reportes: cajas de "Hoy" con cifra grande e ícono, listas en tarjeta, barras
+  con el token `grafico`. Falta el detalle al pasar el mouse sobre una barra y
+  unificar los botones de exportar.
+- Ingreso: lugar del logo y resplandor ámbar. Falta el botón de ver contraseña.
+- Clientes: la tabla va dentro de una tarjeta.
+- Pendiente: los diálogos entran animados pero salen de golpe (se desmontan al
+  cerrar); resolver al unificarlos en un componente base.
+
+**Cuarta tanda (2026-10-12) — usabilidad de lista, ficha y venta:**
+
+- `membresias/components/EstadoDeMembresia.vue` (nuevo): la situación de la
+  membresía en una línea, con ícono y texto. Se usa en la lista de clientes.
+  Pendiente: usarlo también en Reportes y en el panel del pase.
+- Lista de clientes: columna "Membresía" y filtro por situación. En angosto
+  quedan nº, nombre y membresía.
+- Ficha: última visita y días que vino; recuadro de membresía destacado
+  cuando vence o venció; "Anular pago" como botón con borde.
+- Venta: plan sugerido al renovar, planes antes que el pase, y ya usa
+  `ControlSegmentado` (cómo pagó) y `ui/checkbox` (otra fecha).
+- Siguen con casillas nativas: accesos de usuarios y el diálogo de plan.
+  Siguen con radios sueltos: el panel del pase del check-in.
+
+**Quinta tanda (2026-10-12) — inicio y menú del celular:**
+
+- `features/inicio/` (nuevo): `views/InicioView.vue` y sus componentes
+  `CajaResumen`, `CobradoHoy`, `ClientesSegunMembresia`, `NumerosDeHoy` y
+  `VencenEstosDias`. Revisada en claro y oscuro, a 1280 y a 390 px, con la
+  cuenta del dueño. **Falta verla con una cuenta de recepción** (menos
+  bloques) y unificar `CajaResumen` con las cajas de Reportes y de Pagos.
+- `layout/AppLayout.vue`: enlace "Inicio" y, en angosto, botón "Menú" que
+  abre un panel lateral (`<dialog>`). Resuelve el pendiente de "con siete
+  secciones conviene un menú propio para celular". El panel entra con la
+  animación común de los diálogos; falta que entre desde el costado.
+
+**Sexta tanda (2026-10-13) — anchos:** medidas las doce pantallas a 390, 768,
+1024, 1440 y 1920 px. Sin desbordes ni tablas que se deslicen de costado en
+ninguna. Reglas en `docs/ESTILO.md`, sección "Anchos".
+
+- Menú lateral desde 1024 px (antes 768).
+- Dos columnas en pantalla grande: ficha, venta, visitas, reportes, planes.
+- Tablas que se reacomodan en angosto: membresías y pagos de la ficha,
+  Pagos, Visitas, precios de Planes y Usuarios.
+- Sin revisar a estos anchos: diálogos, check-in, editar usuario y el modo
+  claro. En el celular quedan controles de menos de 36 px de alto en la
+  venta y en los accesos de usuarios (casillas y radios; toda la fila es
+  tocable).
+
+**Respuestas del usuario:** nombre "Gimnasio" por ahora; el logo llega después
+(dejarle el lugar en el menú y en el ingreso); sin fecha fija ("con calma pero
+bien"); PC posiblemente modesta (poco desenfoque); monitor del check-in de 19"
+mientras tanto (revisar a 1280×1024 y 1366×768).
+
+**Lo que sigue, en este orden:** ingreso, reportes, ficha del cliente, check-in y venta de membresía.
+
+**Pendientes que salieron en esta pasada:**
+
+- Texto de error en oscuro: `text-destructive` da 3,83 sobre `card`. Falta
+  decidir un `destructive-text` (ver `docs/ESTILO.md`).
+- `reportes/components/BarraDeDato.vue`: la barra en ámbar-500 da 2,12 sobre
+  `muted` en claro. Resolver con la skill `dataviz` al hacer Reportes.
+- Botón y etiqueta destructivos conservan `dark:bg-destructive/60`: revisar si
+  hace falta al rediseñar `button/` y `badge/`.
+- `theme-color` en `index.html`: tiene que seguir al modo.
+- Ninguna pantalla real (salvo el ingreso) se revisó todavía con los tokens
+  nuevos: cada una se revisa en los dos modos cuando le toque.
+- `features/muestra/views/MuestraView.vue`: sumarle cada componente base
+  nuevo (diálogo, casilla, área de texto) cuando exista.
+
+## Dirección visual propuesta (2026-10-11, para la demo al dueño)
+
+El usuario pidió adelantar el aspecto para una demo: lo quiere **más
+llamativo**. Esto es lo que se conversó; **nada está decidido todavía** salvo
+donde se indica.
+
+Ideas que le gustaron al usuario:
+
+1. **Identidad:** color de acento, nombre y logo del gimnasio. Hoy todo es
+   gris y negro, y por eso se ve genérico.
+2. **Profundidad y materiales:** barra lateral translúcida, tarjetas con
+   sombra suave y radios mayores, encabezados fijos con efecto de vidrio.
+3. **Tipografía con jerarquía:** títulos más grandes y apretados; números
+   grandes en lo que importa (cobrado hoy, días restantes, socios activos).
+4. **Respuesta al tocar:** botones y filas que reaccionan al presionar,
+   transiciones suaves entre pantallas. Solo CSS. El check-in, sin animaciones.
+5. **Pantallas prioritarias para la demo:** ingreso (fondo con degradado y
+   tarjeta de vidrio), reportes (cajas con color e ícono, gráficos con el
+   acento), ficha del cliente (avatar y anillo de días restantes), check-in
+   (tipografía más grande, mejor avatar), venta de membresía (tarjetas de
+   plan más vistosas, promo destacada).
+
+Tres direcciones presentadas (falta que el usuario elija):
+
+| | Cómo se ve |
+|---|---|
+| **A. Oscuro deportivo** | Fondo oscuro, acento verde lima o naranja eléctrico. La recomendada para la demo, con interruptor claro/oscuro. |
+| **B. Claro y limpio** | Mucho blanco, acento azul o violeta, vidrio y sombras suaves. |
+| **C. Cálido y enérgico** | Fondo claro cálido, acento coral o naranja. |
+
+Se le ofreció armar primero una página de muestra con las tres direcciones
+sobre una pantalla real (Reportes), para elegir viéndolas.
+
+**Preguntas que quedaron sin responder** (hacérselas antes de empezar):
+cuál dirección, nombre y logo del gimnasio, si tiene colores propios, y la
+fecha de la demo.
+
+**Orden de trabajo acordado:** primero los tokens (colores, radios, sombras,
+tipografía base), después el menú y las cinco pantallas prioritarias. El resto
+se afina después de la demo. No se toca nada de la lógica.
 
 ## Instrucciones para quien haga la pasada
 
@@ -119,6 +272,61 @@ Son copias en el repo: se editan acá.
 |---|---|
 | `views/VisitasView.vue` | Formulario de registro, aviso de confirmación, tabla del último mes. |
 
+### Reportes (`src/web/features/reportes/`) — solo dueño, primero celular
+
+| Archivo | Qué ajustar |
+|---|---|
+| `views/ReportesView.vue` | Las cuatro cajas de "Hoy", las listas de por vencer / vencidos / pases frecuentes, el selector de mes, los botones de exportar (se repiten en cada sección: evaluar un menú único). Probar en un celular real, no solo a 390 px. |
+| `components/BarraDeDato.vue` | Las barras de los gráficos. Hoy usan el color principal sin más. **Antes de tocarlas, cargar la skill `dataviz`**: validar el color con su script en claro y oscuro, extremo redondeado de 4 px, y agregar el detalle al pasar el mouse o tocar. El número va siempre escrito al lado; eso no se quita. |
+
+### Ingreso (`src/web/features/sesion/`)
+
+| Archivo | Qué ajustar |
+|---|---|
+| `views/IngresarView.vue` | Es la primera impresión del sistema: marca del gimnasio, tarjeta de ingreso, aviso de sesión vencida. Falta el botón para ver la contraseña. |
+
+### Usuarios (`src/web/features/usuarios/`) — solo dueño
+
+| Archivo | Qué ajustar |
+|---|---|
+| `views/UsuariosView.vue` | Tabla de usuarios y etiquetas de estado. |
+| `views/UsuarioFormView.vue` | Las cuatro secciones (datos, accesos, contraseña, desactivar) y sus separadores. |
+| `components/AccesosPorModulo.vue` | Las casillas son `<input type="checkbox">` nativos dentro de `fieldset`: falta un componente propio de casilla (el mismo que necesita la venta de membresías). Cuidar que se lea fácil: es la pantalla donde el dueño decide quién puede qué. |
+
+### Planes y precios (`src/web/features/planes/`)
+
+| Archivo | Qué ajustar |
+|---|---|
+| `views/PlanesView.vue` | La tarjeta de cada plan: el "se cobra hoy" grande, la fila de botones (son cuatro por plan: evaluar un menú), el historial de precios. |
+| `components/PrecioDialog.vue` | Diálogo en dos pasos (escribir, revisar). El paso de revisión es el momento más importante de la pantalla: que el precio que se va a cobrar se lea sin esfuerzo. |
+| `components/PlanDialog.vue` | Crear plan / cambiar nombre. Tiene otra casilla nativa. |
+
+### Estado del cliente y cuenta propia
+
+| Archivo | Qué ajustar |
+|---|---|
+| `clientes/components/EstadoDelCliente.vue` | Sección "Acceso y estado" al pie de la ficha, con el diálogo de bloqueo. Que "dar de baja" se vea como algo serio sin asustar: no borra nada. |
+| `shared/components/ConfirmarDialog.vue` | El diálogo de confirmación que usan baja de cliente, baja de plan y quitar precio. Unificar con los demás `<dialog>` en un componente base. |
+| `sesion/views/MiCuentaView.vue` | Formulario de cambio de contraseña. |
+
+### Otras piezas nuevas
+
+- `layout/AppLayout.vue`: el bloque de abajo con el nombre de quien está
+  adentro y "Cerrar sesión". En angosto el nombre se oculta.
+- `layout/SinAccesoView.vue`: la pantalla de "no tenés acceso".
+
+### Pendientes de ancho angosto en pantallas que ya existían
+
+- `clientes/views/ClientesListaView.vue`: **resuelto** el desborde a 390 px
+  (era la paginación, no la tabla). En angosto quedan tres columnas (nº,
+  nombre y tipo) y la paginación dice "3 de 7". Falta decidir si en celular
+  conviene mostrar tarjetas en vez de tabla.
+- `layout/AppLayout.vue`: en angosto el menú se desliza de costado y "Cerrar
+  sesión" queda solo como ícono. Funciona, pero con siete secciones conviene
+  un menú propio para celular.
+- Revisadas a 390 px sin desborde: clientes, ficha, pagos, usuarios, planes,
+  visitas y reportes. Sin revisar a ese ancho: los formularios y los diálogos.
+
 ## 5. Pantallas que todavía no existen
 
 Se agregan acá a medida que se construyan:
@@ -126,8 +334,8 @@ Se agregan acá a medida que se construyan:
 - [x] Venta rápida de pase por sesión desde el check-in (ya está en la sección 4)
 - [x] Pagos: historial y anulación (ya está en la sección 4)
 - [x] Visitas / cortesías (ya está en la sección 4)
-- [ ] Reportes, pensados para el celular del dueño (rebanada 5)
-- [ ] Login (rebanada 6)
+- [x] Reportes, pensados para el celular del dueño (ya está en la sección 4)
+- [x] Login y usuarios (ya está en la sección 4)
 
 ## 6. Preguntas abiertas para el dueño
 

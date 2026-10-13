@@ -7,26 +7,32 @@
  */
 
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { hoyEnZona } from '@/lib/fechas';
 import type { ServicioCheckin } from '../application/checkin.service';
-import { checkinInputSchema, paseInputSchema } from './schemas';
+import { asistenciaQuerySchema, checkinInputSchema, paseInputSchema } from './schemas';
 
 /**
- * @param operadorActual id del usuario que está operando (provisorio hasta
- *   que haya login). Queda como quien registró la venta del pase.
+ * @param operadorActual el id de quien inició sesión; queda como quien lo registró.
  */
-export function rutasCheckin(servicio: ServicioCheckin, operadorActual: () => number) {
+export function rutasCheckin(
+  servicio: ServicioCheckin,
+  operadorActual: (c: Context) => number,
+) {
   return new Hono()
     .post('/', zValidator('json', checkinInputSchema), (c) =>
       c.json(servicio.registrar(c.req.valid('json').identificador, hoyEnZona())),
     )
 
+    .get('/asistencia', zValidator('query', asistenciaQuerySchema), (c) =>
+      c.json(servicio.asistencia(c.req.valid('query').clienteId, hoyEnZona())),
+    )
     .get('/pase', (c) => c.json({ pase: servicio.pasePorSesion(hoyEnZona()) }))
 
     .post('/pase', zValidator('json', paseInputSchema), (c) =>
       c.json(
-        servicio.venderPase(c.req.valid('json'), hoyEnZona(), operadorActual()),
+        servicio.venderPase(c.req.valid('json'), hoyEnZona(), operadorActual(c)),
         201,
       ),
     );

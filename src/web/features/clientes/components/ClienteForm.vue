@@ -16,7 +16,7 @@ import { EXTENSIONES, clienteInputSchema } from '@/modules/clientes';
 import CampoFormulario from '@/web/shared/components/CampoFormulario.vue';
 import type { ErrorDeApi } from '@/web/shared/lib/api';
 import { plural } from '@/web/shared/lib/formato';
-import { esquemaDeFormulario } from '@/web/shared/lib/validacion';
+import { esquemaDeFormulario, useErroresDelServidor } from '@/web/shared/lib/validacion';
 import { Button } from '@/web/shared/ui/button';
 import { Input } from '@/web/shared/ui/input';
 import {
@@ -53,11 +53,18 @@ const DEPARTAMENTOS: Record<string, string> = {
 };
 
 // En el orden en que aparecen: así se elige el primer campo con error.
-const CAMPOS = ['nombre', 'apellido', 'ci', 'ciExtension', 'telefono'] as const;
+const CAMPOS = [
+  'nombre',
+  'apellido',
+  'ci',
+  'ciExtension',
+  'telefono',
+  'referidoPor',
+] as const;
 type Campo = (typeof CAMPOS)[number];
 const esCampo = (valor: unknown): valor is Campo => CAMPOS.some((c) => c === valor);
 
-const { handleSubmit, defineField, errors, setFieldError } = useForm({
+const { handleSubmit, defineField, errors, values } = useForm({
   validationSchema: esquemaDeFormulario(clienteInputSchema),
   initialValues: {
     nombre: props.inicial?.nombre ?? '',
@@ -65,8 +72,11 @@ const { handleSubmit, defineField, errors, setFieldError } = useForm({
     ci: props.inicial?.ci ?? '',
     ciExtension: props.inicial?.ciExtension ?? 'LP',
     telefono: props.inicial?.telefono ?? '',
+    referidoPor: props.inicial?.referidoPor ?? '',
   },
 });
+// Los errores que devuelve el servidor van aparte: ver useErroresDelServidor.
+const { delServidor, ponerError } = useErroresDelServidor(values);
 
 const alSalir = (estado: { errors: string[] }) => ({
   validateOnBlur: true,
@@ -78,6 +88,7 @@ const [apellido, apellidoAttrs] = defineField('apellido', alSalir);
 const [ci, ciAttrs] = defineField('ci', alSalir);
 const [ciExtension] = defineField('ciExtension', alSalir);
 const [telefono, telefonoAttrs] = defineField('telefono', alSalir);
+const [referidoPor, referidoPorAttrs] = defineField('referidoPor', alSalir);
 
 /** Se anuncia a lectores de pantalla y se muestra sobre los botones. */
 const aviso = ref('');
@@ -107,7 +118,7 @@ watch(
     // El dominio dice qué campo falló; un CI repetido siempre es el campo CI.
     const campo = error.codigo === 'CONFLICTO' ? 'ci' : error.detalles.campo;
     if (esCampo(campo)) {
-      setFieldError(campo, error.message);
+      ponerError(campo, error.message);
       aviso.value = '';
       void enfocar(campo);
     } else {
@@ -124,7 +135,7 @@ watch(
         id="cliente-nombre"
         v-slot="{ control }"
         etiqueta="Nombre"
-        :error="errors.nombre"
+        :error="errors.nombre ?? delServidor.nombre"
       >
         <Input
           v-bind="{ ...control, ...nombreAttrs }"
@@ -139,7 +150,7 @@ watch(
         v-slot="{ control }"
         etiqueta="Apellido"
         opcional
-        :error="errors.apellido"
+        :error="errors.apellido ?? delServidor.apellido"
       >
         <Input
           v-bind="{ ...control, ...apellidoAttrs }"
@@ -155,7 +166,7 @@ watch(
         etiqueta="CI"
         opcional
         ayuda="Solo números, entre 4 y 12 dígitos. Dejalo vacío si es menor de edad."
-        :error="errors.ci"
+        :error="errors.ci ?? delServidor.ci"
       >
         <Input
           v-bind="{ ...control, ...ciAttrs }"
@@ -170,7 +181,7 @@ watch(
         id="cliente-ciExtension"
         v-slot="{ control }"
         etiqueta="Extensión del CI"
-        :error="errors.ciExtension"
+        :error="errors.ciExtension ?? delServidor.ciExtension"
       >
         <Select
           :model-value="ciExtension ?? 'LP'"
@@ -194,7 +205,7 @@ watch(
         v-slot="{ control }"
         etiqueta="Teléfono"
         opcional
-        :error="errors.telefono"
+        :error="errors.telefono ?? delServidor.telefono"
       >
         <Input
           v-bind="{ ...control, ...telefonoAttrs }"
@@ -203,6 +214,23 @@ watch(
           inputmode="tel"
           autocomplete="off"
           @update:model-value="telefono = String($event)"
+        />
+      </CampoFormulario>
+
+      <CampoFormulario
+        id="cliente-referidoPor"
+        v-slot="{ control }"
+        etiqueta="Referido por"
+        opcional
+        ayuda="Número de socio o CI de quien lo trajo."
+        :error="errors.referidoPor ?? delServidor.referidoPor"
+      >
+        <Input
+          v-bind="{ ...control, ...referidoPorAttrs }"
+          :model-value="referidoPor ?? ''"
+          inputmode="numeric"
+          autocomplete="off"
+          @update:model-value="referidoPor = String($event)"
         />
       </CampoFormulario>
     </div>

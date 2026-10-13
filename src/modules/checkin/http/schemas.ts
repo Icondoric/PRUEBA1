@@ -14,6 +14,10 @@ export const checkinInputSchema = z.object({
  * Venta rápida de un pase. Viene `clienteId` (ya es cliente) o `nombre` (es
  * nuevo). Que el nombre sea válido lo decide el dominio de clientes.
  */
+export const asistenciaQuerySchema = z.object({
+  clienteId: z.coerce.number().int().positive(),
+});
+
 export const paseInputSchema = z.object({
   clienteId: z.coerce.number().int().positive().optional().nullable(),
   nombre: z.string().max(80).optional().nullable(),

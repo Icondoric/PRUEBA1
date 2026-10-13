@@ -9,8 +9,13 @@
  * necesitan levantar nada ni congelar el reloj.
  */
 
-import { ConflictoError, NoEncontradoError } from '@/lib/errors';
-import type { FechaISO } from '@/lib/fechas';
+import {
+  ConflictoError,
+  NoEncontradoError,
+  ReglaDeNegocioError,
+  SinPermisoError,
+} from '@/lib/errors';
+import { type FechaISO, sumarDias } from '@/lib/fechas';
 import {
   type DatosNuevoCliente,
   type TipoCliente,
@@ -20,6 +25,7 @@ import {
   siguienteNroSocio,
   tipoCliente,
 } from '../domain/cliente';
+import { prepararBloqueo } from '../domain/bloqueo';
 import type {
   ClienteFila,
   FiltroBusqueda,
@@ -29,23 +35,71 @@ import type {
 export interface ClienteVista extends ClienteFila {
   nombreCompleto: string;
   tipo: TipoCliente;
+  /** Quién lo bloqueó. null si no está bloqueado (o si se bloqueó antes de registrarlo). */
+  bloqueadoPorNombre: string | null;
 }
 
-export function crearServicioClientes(repo: RepoClientes) {
+export interface DatosDeCliente extends DatosNuevoCliente {
+  /** Quién lo trajo, ya resuelto (lo usan los scripts). */
+  referidoPorClienteId?: number | null;
+  /**
+   * Quién lo trajo, como se teclea en el formulario: nº de socio o CI.
+   * Vacío = nadie. Si no viene, al editar no se toca.
+   */
+  referidoPor?: string | null;
+}
+
+export function crearServicioClientes(
+  repo: RepoClientes,
+  /** Con cuántos días de anticipación se avisa: el mismo aviso del check-in. */
+  opciones: { diasDeAviso?: number } = {},
+) {
+  const diasDeAviso = opciones.diasDeAviso ?? 3;
+
   function decorar(fila: ClienteFila): ClienteVista {
     return {
       ...fila,
       nombreCompleto: nombreCompleto(fila),
       tipo: tipoCliente(repo.membresiasResumen(fila.id)),
+      bloqueadoPorNombre:
+        fila.bloqueado && fila.bloqueadoPor !== null
+          ? repo.nombreDeUsuario(fila.bloqueadoPor)
+          : null,
     };
   }
 
+  /**
+   * De "lo que se tecleó" a un cliente. `undefined` = no vino el dato (al
+   * editar, no se toca); `null` = se dejó vacío a propósito.
+   */
+  function resolverReferido(datos: DatosDeCliente, propioId?: number) {
+    if (datos.referidoPor === undefined || datos.referidoPor === null) {
+      return datos.referidoPorClienteId;
+    }
+
+    const texto = datos.referidoPor.trim();
+    if (!texto) return null;
+
+    const padrino = repo.porIdentificador(normalizarIdentificador(texto));
+    if (!padrino) {
+      throw new ReglaDeNegocioError(
+        `“${texto}” no es un número de socio ni un CI registrado`,
+        { campo: 'referidoPor' },
+      );
+    }
+    if (padrino.id === propioId) {
+      throw new ReglaDeNegocioError('Un cliente no puede referirse a sí mismo', {
+        campo: 'referidoPor',
+      });
+    }
+    return padrino.id;
+  }
+
   return {
-    registrar(
-      datos: DatosNuevoCliente & { referidoPorClienteId?: number | null },
-      hoy: FechaISO,
-    ): ClienteVista {
+    registrar(datos: DatosDeCliente, hoy: FechaISO): ClienteVista {
       const normalizado = prepararAlta(datos);
+      // Antes de guardar nada: si el referido no existe, no se crea el cliente.
+      const referidoPorClienteId = resolverReferido(datos) ?? null;
 
       // Un CI repetido es la forma número uno de duplicar un socio.
       if (normalizado.ci) {
@@ -62,7 +116,7 @@ export function crearServicioClientes(repo: RepoClientes) {
         ...normalizado,
         nroSocio: siguienteNroSocio(repo.maximoNroSocio()),
         fechaRegistro: hoy,
-        referidoPorClienteId: datos.referidoPorClienteId ?? null,
+        referidoPorClienteId,
       });
 
       return decorar(fila);
@@ -80,8 +134,20 @@ export function crearServicioClientes(repo: RepoClientes) {
       return fila ? decorar(fila) : null;
     },
 
-    listar(filtro: FiltroBusqueda) {
-      const { filas, total } = repo.buscar(filtro);
+    /**
+     * @param puedeVerBajas los dados de baja los ve quien puede reactivarlos.
+     */
+    /**
+     * @param hoy para filtrar por cómo está la membresía. Sin fecha, ese filtro
+     *   no se aplica.
+     */
+    listar(filtro: FiltroBusqueda, puedeVerBajas = false, hoy?: FechaISO) {
+      if (filtro.deBaja && !puedeVerBajas) {
+        throw new SinPermisoError('Tu usuario no puede ver a los clientes dados de baja');
+      }
+      const { filas, total } = repo.buscar(
+        hoy ? { ...filtro, hoy, avisoHasta: sumarDias(hoy, diasDeAviso) } : filtro,
+      );
       return {
         clientes: filas.map(decorar),
         total,
@@ -91,10 +157,11 @@ export function crearServicioClientes(repo: RepoClientes) {
       };
     },
 
-    actualizar(id: number, datos: DatosNuevoCliente): ClienteVista {
+    actualizar(id: number, datos: DatosDeCliente): ClienteVista {
       if (!repo.porId(id)) throw new NoEncontradoError('el cliente', id);
 
       const normalizado = prepararAlta(datos);
+      const referido = resolverReferido(datos, id);
 
       if (normalizado.ci) {
         const otro = repo.porCi(normalizado.ci, normalizado.ciExtension!);
@@ -106,11 +173,43 @@ export function crearServicioClientes(repo: RepoClientes) {
         }
       }
 
-      const fila = repo.actualizar(id, normalizado);
+      const fila = repo.actualizar(
+        id,
+        referido === undefined
+          ? normalizado
+          : { ...normalizado, referidoPorClienteId: referido },
+      );
       if (!fila) throw new NoEncontradoError('el cliente', id);
       return decorar(fila);
     },
 
+    /**
+     * Bloqueo manual: rebota en el check-in aunque tenga la membresía al día.
+     * Queda registrado quién lo bloqueó y cuándo.
+     */
+    bloquear(id: number, motivo: string, usuarioId: number, ahora: Date): ClienteVista {
+      if (!repo.porId(id)) throw new NoEncontradoError('el cliente', id);
+      repo.bloquear(id, prepararBloqueo(motivo), usuarioId, ahora);
+      return this.obtener(id);
+    },
+
+    desbloquear(id: number): ClienteVista {
+      if (!repo.porId(id)) throw new NoEncontradoError('el cliente', id);
+      repo.desbloquear(id);
+      return this.obtener(id);
+    },
+
+    /** Deshace una baja. El cliente vuelve con todo su historial. */
+    reactivar(id: number): ClienteVista {
+      if (!repo.porId(id)) throw new NoEncontradoError('el cliente', id);
+      repo.reactivar(id);
+      return this.obtener(id);
+    },
+
+    /**
+     * Dar de baja. NO borra nada: el cliente y todo su historial quedan
+     * guardados; deja de aparecer en las listas y no puede entrar.
+     */
     desactivar(id: number): void {
       if (!repo.porId(id)) throw new NoEncontradoError('el cliente', id);
       repo.desactivar(id);

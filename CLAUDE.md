@@ -104,13 +104,18 @@ disfraces una falla técnica de mensaje amable.
 
 - Responde en **< 100ms**. Es SQLite local, no hay excusa.
 - Autofoco permanente, Enter envía, sin mouse.
-- Pantalla completa: verde / amarillo (≤3 días) / rojo, con nombre, foto y días
+- Pantalla completa: verde / ámbar (≤3 días) / rojo, con nombre, foto y días
   restantes. Se limpia sola a los 3 segundos.
 - Sonido distinto para permitido y rechazado.
 - Un pase por sesión vigente dice "válido hoy" en verde, no "vence hoy" en
-  amarillo. Avisar que renueve un pase diario es ruido.
+  ámbar. Avisar que renueve un pase diario es ruido.
 
 ## Interfaz — leé la skill antes de tocar una pantalla
+
+**Colores, modos y contrastes: `docs/ESTILO.md`.** Ningún componente escribe
+un color (siempre un token de `src/web/shared/styles/tokens.css`), y ninguna
+pantalla está terminada sin revisarla en modo claro Y oscuro. En el check-in
+el ámbar significa solo "por vencer"; en el resto es marca.
 
 **Antes de escribir o revisar cualquier cosa en `src/web/`, cargá la skill
 `apple-design`** (`.claude/skills/apple-design/SKILL.md`). Define cómo se
@@ -138,6 +143,78 @@ aplica **selectivamente**, como ella misma indica:
   ver `docs/PASADA-VISUAL.md`. Hasta entonces no rediseñes nada; usá los
   componentes y tokens como están. **Cada vez que crees una pantalla o un
   componente nuevo, anotalo en ese archivo** con lo que habrá que ajustarle.
+
+## Roles — quién ve qué
+
+El sistema es para dos roles, y toda pantalla o ruta nueva se piensa desde el
+principio para uno de ellos:
+
+- **Recepción** (`recepcion`): clientes, membresías, check-in, venta de pases,
+  pagos y visitas.
+- **Dueño** (`admin`): todo lo de recepción **y además los reportes**. Los
+  reportes son SOLO del dueño, en la PC o desde su celular. Recepción no los
+  ve ni en el menú.
+
+Decidido con el usuario (2026-10-11):
+
+- **Cada persona tiene su propio usuario.** Nada de cuentas compartidas: hay
+  que poder saber quién cobró qué.
+- **Anular un pago: solo el dueño por defecto**, pero es un acceso que puede
+  darle a alguien, como cualquier otro.
+- **Caja:** recepción ve lo cobrado **solo del día de hoy** (lo necesita para
+  cerrar caja). Otras fechas y rangos, solo el dueño.
+- **Accesos por módulo y submódulo.** El dueño tiene todo, siempre. A cada
+  usuario le da o le quita accesos con casillas agrupadas por módulo; un
+  usuario nuevo arranca con lo básico de recepción. El catálogo está en
+  `src/modules/usuarios/domain/permisos.ts`: toda función nueva que no sea
+  para todos agrega ahí su acceso.
+- **Solo el dueño administra usuarios y accesos.** Eso no se delega.
+- **Dar de baja (y reactivar) a un cliente: del dueño por defecto**, y es
+  un acceso que puede darle a quien quiera, como los demás. Lo que no cambia:
+  dar de baja NUNCA borra. El cliente queda guardado con todo su historial,
+  por auditoría.
+- **La sesión se cierra tras 8 horas sin uso** (`GYM_SESION_HORAS`). Puede
+  cambiar más adelante.
+- **La cuenta del dueño se crea con `pnpm usuarios:dueno`**, no desde el
+  navegador. El mismo comando le cambia la contraseña si la olvida.
+
+**Cómo está hecho** (ya funciona; no lo reinventes):
+
+- **Toda ruta de la API está cerrada salvo que `src/server/acceso.ts` diga
+  quién puede usarla.** Ruta nueva = una línea en esa tabla. Sin la línea,
+  queda cerrada para todos, y hay un test que falla.
+- Antes del guardia corren las defensas de `src/server/middleware/proteccion.ts`
+  (cabeceras, origen del pedido, tamaño, tope de intentos de ingreso). Qué
+  cubren y qué queda pendiente: `docs/SEGURIDAD.md`. Todo texto de un esquema
+  nuevo lleva tope de largo, y nada que cambie datos va por GET.
+- Las rutas y los servicios NO revisan accesos por su cuenta: lo hace el
+  guardia (`src/server/middleware/sesion.ts`) antes de que el pedido llegue.
+  La única excepción es cuando depende del contenido del pedido (ver la caja
+  de otra fecha), y ahí decide el servicio.
+- Quién registró algo sale de la sesión: `operadorActual(c)`. Nunca de un
+  dato que mande el navegador.
+- En el frontend, cada ruta declara `meta: { permisos: [...] }` o
+  `soloDueno`, y los botones se muestran con `useAccesos().puede(...)`.
+  Eso es comodidad: la seguridad es la del servidor.
+- El navegador no puede importar valores de `@/modules/usuarios` (arrastra
+  `node:crypto`): usa `@/modules/usuarios/contrato`. Los tipos sí, con
+  `import type`.
+- Contraseñas con `scrypt` de Node, sin dependencias. En la base se guarda
+  el hash de la contraseña y el hash del token de sesión, nunca los originales.
+
+Si una pantalla nueva no queda claro de qué rol o acceso es, preguntá.
+
+## Formularios: los errores del servidor van aparte
+
+Un error de campo que devuelve el servidor ("ese CI ya es de otro") NO se pone
+con `setFieldError` de vee-validate: al saltar el foco, vee-validate vuelve a
+pasar el esquema y lo borra. Se usa `useErroresDelServidor(values)` de
+`src/web/shared/lib/validacion.ts`, y en la plantilla
+`:error="errors.ci ?? delServidor.ci"`.
+
+Y un `<dialog>` cuyo contenido aparece después de abrirse (porque espera un
+dato, o porque tiene un segundo paso) no respeta `autofocus`: el foco se pone
+a mano con `nextTick` + `focus()`. Si no, Enter no hace nada.
 
 ## Documentación para la guía de usuario
 

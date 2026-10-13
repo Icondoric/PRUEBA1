@@ -3,22 +3,28 @@
  */
 
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { hoyEnZona } from '@/lib/fechas';
 import type { ServicioVisitas } from '../application/visitas.service';
 import { listarVisitasQuerySchema, visitaInputSchema } from './schemas';
 
 /**
- * @param operadorActual id del usuario que está operando (provisorio hasta
- *   que haya login).
+ * @param operadorActual el id de quien inició sesión; queda como quien lo registró.
  */
-export function rutasVisitas(servicio: ServicioVisitas, operadorActual: () => number) {
+export function rutasVisitas(
+  servicio: ServicioVisitas,
+  operadorActual: (c: Context) => number,
+) {
   return new Hono()
     .get('/', zValidator('query', listarVisitasQuerySchema), (c) =>
       c.json(servicio.listar(c.req.valid('query'), hoyEnZona())),
     )
 
     .post('/', zValidator('json', visitaInputSchema), (c) =>
-      c.json(servicio.registrar(c.req.valid('json'), hoyEnZona(), operadorActual()), 201),
+      c.json(
+        servicio.registrar(c.req.valid('json'), hoyEnZona(), operadorActual(c)),
+        201,
+      ),
     );
 }

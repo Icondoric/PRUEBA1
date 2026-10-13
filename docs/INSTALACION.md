@@ -21,13 +21,30 @@ C:\Gimnasio\            (o ~/Gimnasio en Mac/Linux)
 2. Copiar la carpeta `app` al disco.
 3. Desde esa carpeta:
    ```
-   pnpm install --prod
+   pnpm install
+   pnpm usuarios:dueno
    pnpm start
    ```
    La carpeta `app` ya trae `dist/` compilado (se genera con `pnpm build` en
    la máquina de desarrollo). Las migraciones de la base se aplican solas cada
    vez que arranca el sistema: no hay un paso aparte.
-4. Abrir `http://localhost:3000` en el navegador.
+
+   La instalación es completa (sin `--prod`) porque los comandos de
+   mantenimiento (`pnpm usuarios:dueno`, `pnpm backup`) necesitan las
+   herramientas de desarrollo para correr.
+4. Abrir `http://localhost:3000` en el navegador e ingresar con la cuenta del
+   dueño.
+
+### La cuenta del dueño
+
+`pnpm usuarios:dueno` pregunta usuario, nombre y contraseña, y crea la cuenta
+del dueño. No hay otra forma de crearla: el sistema no tiene una pantalla de
+"primer uso", para que nadie que llegue antes a la PC se quede con el control.
+
+**Si el dueño olvida su contraseña**, se corre el mismo comando con el mismo
+usuario: le pone la contraseña nueva y cierra sus sesiones abiertas.
+
+El resto de los usuarios los crea el dueño desde la pantalla "Usuarios".
 
 ### Variables de entorno
 
@@ -37,9 +54,10 @@ Todas son opcionales; los defaults sirven para la instalación de arriba.
 |---|---|---|
 | `GYM_DB` | `./datos/gimnasio.db` | Archivo de la base |
 | `PORT` | `3000` | Puerto del sistema |
-| `HOST` | `127.0.0.1` | Dónde escucha. Ver el punto 4 antes de cambiarlo |
+| `HOST` | `127.0.0.1` | Dónde escucha: una dirección, o varias separadas por coma. Ver el punto 4 antes de cambiarlo |
 | `GYM_RESPALDOS` | `./respaldos` | Carpeta local de respaldos |
 | `GYM_RESPALDOS_NUBE` | (ninguna) | Carpeta sincronizada a la nube |
+| `GYM_SESION_HORAS` | `8` | Horas sin uso tras las que una sesión se cierra sola |
 
 ---
 
@@ -84,10 +102,35 @@ el celular del dueño, ambos con la misma cuenta. El celular queda en la misma
 red privada que la PC, y el dueño entra a `http://gimnasio-pc:3000/reportes`
 desde cualquier lado.
 
-Para eso el sistema tiene que arrancar con `HOST=0.0.0.0`. Por defecto escucha
-solo en `127.0.0.1` (la propia PC de recepción), porque **todavía no hay
-login**: abrirlo antes de tener el módulo de usuarios deja los datos al alcance
-de cualquiera conectado al wifi del gimnasio.
+Por defecto el sistema escucha solo en `127.0.0.1` (la propia PC de
+recepción). Para que el celular llegue, hay que sumarle **la dirección de
+Tailscale de la PC**, y solo esa:
+
+```
+HOST=127.0.0.1,100.x.y.z
+```
+
+La dirección `100.x.y.z` es la que muestra Tailscale en la PC del gimnasio
+(ícono de Tailscale → "Mi dirección", o `tailscale ip -4`). Así el sistema
+atiende a la PC y al celular del dueño, y **no queda a la vista en el wifi**.
+Tailscale cifra todo lo que viaja entre el celular y la PC.
+
+**No usar `HOST=0.0.0.0`** salvo que no haya otra salida: abre el sistema a
+todas las redes, también el wifi del gimnasio, y el tráfico va sin cifrar.
+Cualquiera conectado a ese wifi podría leer contraseñas y sesiones. Si se usa,
+el sistema lo avisa al arrancar.
+
+En cualquiera de los dos casos, lo que protege los datos es el ingreso con
+usuario y contraseña: sin sesión no se ve nada. Por eso:
+
+- la cuenta del dueño tiene que tener una contraseña larga y que no use en
+  otro lado;
+- cada recepcionista, su propio usuario;
+- si se puede, que el wifi de los socios no sea el mismo que el de la PC de
+  recepción.
+
+El dueño entra desde el celular con su usuario y ve lo mismo que en la PC,
+incluidos los reportes.
 
 Por qué Tailscale y no abrir un puerto en el router: no se expone nada a
 internet, no hace falta IP fija ni tocar el router, y no hay un login del
@@ -102,6 +145,11 @@ Alternativa si preferís una URL normal: Cloudflare Tunnel, también gratis.
 ---
 
 ## 5. Respaldos
+
+> El archivo de respaldo tiene los datos de todos los clientes y pagos. No
+> lleva las sesiones abiertas, y las contraseñas van como hash (no se pueden
+> leer), pero **la carpeta de la nube tiene que ser privada**: solo del dueño,
+> sin compartir por enlace.
 
 Lo que protege contra "se quemó la PC". Configurar el día uno, no después.
 

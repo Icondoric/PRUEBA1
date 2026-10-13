@@ -7,7 +7,8 @@
 
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import type { DB } from '@/lib/db';
-import { clientes, membresias, pagos, planes } from '@/lib/db/schema';
+import { alias } from 'drizzle-orm/sqlite-core';
+import { clientes, membresias, pagos, planes, usuarios } from '@/lib/db/schema';
 
 export type PagoFila = typeof pagos.$inferSelect;
 
@@ -19,6 +20,9 @@ export interface FiltroPagos {
 }
 
 export function crearRepoPagos(db: DB) {
+  // La tabla de usuarios, en el papel de "quien anuló el pago".
+  const anulador = alias(usuarios, 'anulador');
+
   const columnas = {
     id: pagos.id,
     fechaPago: pagos.fechaPago,
@@ -27,6 +31,7 @@ export function crearRepoPagos(db: DB) {
     nota: pagos.nota,
     anulado: pagos.anulado,
     motivoAnulacion: pagos.motivoAnulacion,
+    anuladoPorNombre: anulador.nombre,
     clienteId: pagos.clienteId,
     clienteNombre: clientes.nombre,
     clienteApellido: clientes.apellido,
@@ -43,7 +48,8 @@ export function crearRepoPagos(db: DB) {
       .from(pagos)
       .innerJoin(clientes, eq(clientes.id, pagos.clienteId))
       .leftJoin(membresias, eq(membresias.id, pagos.membresiaId))
-      .leftJoin(planes, eq(planes.id, membresias.planId));
+      .leftJoin(planes, eq(planes.id, membresias.planId))
+      .leftJoin(anulador, eq(anulador.id, pagos.anuladoPor));
 
   return {
     porId(id: number): PagoFila | undefined {
@@ -77,11 +83,11 @@ export function crearRepoPagos(db: DB) {
      * Anula el pago y cancela la membresía que pagaba, o ninguna de las dos.
      * Un pago anulado con su membresía dando acceso sería entrar gratis.
      */
-    anular(id: number, motivo: string): PagoFila {
+    anular(id: number, motivo: string, anuladoPor: number, anuladoEn: Date): PagoFila {
       return db.transaction((tx) => {
         const pago = tx
           .update(pagos)
-          .set({ anulado: true, motivoAnulacion: motivo })
+          .set({ anulado: true, motivoAnulacion: motivo, anuladoPor, anuladoEn })
           .where(eq(pagos.id, id))
           .returning()
           .get();

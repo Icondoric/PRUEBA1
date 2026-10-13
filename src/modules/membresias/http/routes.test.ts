@@ -7,22 +7,21 @@
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { DB } from '@/lib/db';
-import { membresias, pagos, planPrecios, planes, usuarios } from '@/lib/db/schema';
+import { membresias, pagos, planPrecios, planes } from '@/lib/db/schema';
 import { hoyEnZona, sumarDias } from '@/lib/fechas';
-import { crearApp } from '@/server';
-import { dbDePrueba, sembrarPlanes } from '@/test/db';
+import { appConSesion, dbDePrueba, sembrarPlanes } from '@/test/db';
 
 const hoy = hoyEnZona();
 
 let db: DB;
-let app: ReturnType<typeof crearApp>;
+let app: ReturnType<typeof appConSesion>;
 let mensualId: number;
 let sesionId: number;
 let clienteId: number;
 
 beforeEach(async () => {
   db = dbDePrueba();
-  app = crearApp(db);
+  app = appConSesion(db);
 
   const [mensual, sesion] = sembrarPlanes(db);
   mensualId = mensual!.id;
@@ -180,13 +179,11 @@ describe('POST /api/membresias', () => {
   it('deja registrado quién la cargó, en la membresía y en el pago', async () => {
     await vender({ planId: mensualId });
 
-    const [operador] = db.select().from(usuarios).all();
     const [membresia] = db.select().from(membresias).all();
     const [pago] = db.select().from(pagos).all();
 
-    expect(operador?.usuario).toBe('recepcion');
-    expect(membresia?.creadoPor).toBe(operador?.id);
-    expect(pago?.registradoPor).toBe(operador?.id);
+    expect(membresia?.creadoPor).toBe(app.usuarioId);
+    expect(pago?.registradoPor).toBe(app.usuarioId);
   });
 
   it('renovación anticipada: fila NUEVA encadenada, la anterior queda intacta', async () => {

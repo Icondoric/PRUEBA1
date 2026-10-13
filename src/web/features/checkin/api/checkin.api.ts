@@ -7,8 +7,10 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import { computed, type MaybeRefOrGetter, toValue } from 'vue';
 import type { z } from 'zod';
 import type {
+  AsistenciaDeCliente,
   PaseEnVenta,
   PaseVendido,
   ResultadoCheckin,
@@ -28,6 +30,18 @@ export function useRegistrarIngreso() {
       pedir<ResultadoCheckin>(api.checkin.$post({ json: { identificador } })),
     // Reintentar un check-in duplicaría el ingreso.
     retry: false,
+  });
+}
+
+/** Cuándo vino por última vez y cuánto viene. Para la ficha. */
+export function useAsistencia(clienteId: MaybeRefOrGetter<number>) {
+  return useQuery({
+    queryKey: computed(() => ['checkin', 'asistencia', toValue(clienteId)] as const),
+    queryFn: () =>
+      pedir<AsistenciaDeCliente>(
+        api.checkin.asistencia.$get({ query: { clienteId: String(toValue(clienteId)) } }),
+      ),
+    enabled: computed(() => toValue(clienteId) > 0),
   });
 }
 

@@ -4,6 +4,7 @@
  * Los demás módulos importan SOLO desde acá: `@/modules/membresias`.
  */
 
+import type { Context } from 'hono';
 import type { DB } from '@/lib/db';
 import type { ServicioClientes } from '@/modules/clientes';
 import { crearServicioMembresias } from './application/membresias.service';
@@ -15,10 +16,14 @@ export function moduloMembresias(
   deps: {
     clientes: Pick<ServicioClientes, 'obtener'>;
     /** id del usuario que opera; queda en creado_por y registrado_por. */
-    operadorActual: () => number;
+    operadorActual: (c: Context) => number;
+    /** Con cuántos días de anticipación se avisa que renueve. */
+    diasDeAviso?: number;
   },
 ) {
-  const servicio = crearServicioMembresias(crearRepoMembresias(db), deps.clientes);
+  const servicio = crearServicioMembresias(crearRepoMembresias(db), deps.clientes, {
+    diasDeAviso: deps.diasDeAviso,
+  });
   return {
     servicio,
     rutas: rutasMembresias(servicio, deps.operadorActual),
@@ -41,3 +46,4 @@ export type { EntradaRenovacion, PeriodoMembresia } from './domain/renovacion';
 export { calcularPeriodo } from './domain/renovacion';
 export { cotizarVenta } from './domain/venta';
 export { METODOS_PAGO, ventaInputSchema } from './http/schemas';
+export type { CoberturasDeClientes } from './application/membresias.service';

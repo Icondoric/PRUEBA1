@@ -9,7 +9,8 @@ import { MOTIVOS_VISITA } from '../domain/visita';
 export const visitaInputSchema = z.object({
   nombre: z
     .string({ error: 'El nombre es obligatorio' })
-    .min(1, 'El nombre es obligatorio'),
+    .min(1, 'El nombre es obligatorio')
+    .max(80, 'No puede pasar de 80 caracteres'),
   motivo: z.enum(MOTIVOS_VISITA, { error: 'Elegí el motivo' }),
   invitadoPor: z.string().max(40).optional().nullable(),
   telefono: z.string().max(30).optional().nullable(),
@@ -21,6 +22,6 @@ export const visitaInputSchema = z.object({
 });
 
 export const listarVisitasQuerySchema = z.object({
-  desde: z.string().optional(),
-  hasta: z.string().optional(),
+  desde: z.string().max(10).optional(),
+  hasta: z.string().max(10).optional(),
 });

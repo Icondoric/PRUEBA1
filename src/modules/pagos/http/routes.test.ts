@@ -7,13 +7,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { DB } from '@/lib/db';
 import { membresias, pagos, planPrecios } from '@/lib/db/schema';
 import { hoyEnZona, sumarDias } from '@/lib/fechas';
-import { crearApp } from '@/server';
-import { dbDePrueba, sembrarPlanes } from '@/test/db';
+import { appConSesion, dbDePrueba, sembrarPlanes } from '@/test/db';
 
 const hoy = hoyEnZona();
 
 let db: DB;
-let app: ReturnType<typeof crearApp>;
+let app: ReturnType<typeof appConSesion>;
 let mensualId: number;
 let sesionId: number;
 let anaId: number;
@@ -36,7 +35,7 @@ const anular = (pagoId: number, motivo: string) =>
 
 beforeEach(async () => {
   db = dbDePrueba();
-  app = crearApp(db);
+  app = appConSesion(db);
 
   const [mensual, sesion] = sembrarPlanes(db);
   mensualId = mensual!.id;

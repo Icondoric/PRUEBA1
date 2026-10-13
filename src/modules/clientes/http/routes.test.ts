@@ -10,17 +10,16 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { crearApp } from '@/server';
 import { membresias, planes } from '@/lib/db/schema';
-import { dbDePrueba, sembrarPlanes } from '@/test/db';
+import { appConSesion, dbDePrueba, sembrarPlanes } from '@/test/db';
 import type { DB } from '@/lib/db';
 
 let db: DB;
-let app: ReturnType<typeof crearApp>;
+let app: ReturnType<typeof appConSesion>;
 
 beforeEach(() => {
   db = dbDePrueba();
-  app = crearApp(db);
+  app = appConSesion(db);
 });
 
 const crear = (body: Record<string, unknown>) =>
@@ -122,7 +121,11 @@ describe('GET /api/clientes (listado)', () => {
 
   it('distingue socio de eventual derivándolo del historial', async () => {
     // A Ana le vendemos una mensualidad; los otros dos quedan eventuales.
-    const mensual = db.select().from(planes).all().find((p) => !p.esPaseDiario)!;
+    const mensual = db
+      .select()
+      .from(planes)
+      .all()
+      .find((p) => !p.esPaseDiario)!;
     db.insert(membresias)
       .values({
         clienteId: 1,

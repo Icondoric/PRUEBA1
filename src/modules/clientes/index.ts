@@ -10,16 +10,40 @@
  */
 
 import type { DB } from '@/lib/db';
+import { NoAutenticadoError } from '@/lib/errors';
 import { crearServicioClientes } from './application/clientes.service';
 import { crearRepoClientes } from './infrastructure/clientes.repo';
-import { rutasClientes } from './http/routes';
+import { type DepsDeClientes, rutasClientes } from './http/routes';
 
-export function moduloClientes(db: DB) {
-  const servicio = crearServicioClientes(crearRepoClientes(db));
-  return { servicio, rutas: rutasClientes(servicio) };
+/** Sin servidor (un script, un test de servicio) no hay sesión: nadie puede nada. */
+const SIN_SESION: DepsDeClientes = {
+  puedeVerBajas: () => false,
+  operadorActual: () => {
+    throw new NoAutenticadoError();
+  },
+  ahora: () => new Date(),
+};
+
+/**
+ * @param deps lo que las rutas necesitan saber del pedido: quién es y qué
+ *   puede. Los scripts usan solo el servicio y no lo pasan.
+ */
+export function moduloClientes(db: DB, deps: DepsDeClientes = SIN_SESION) {
+  const servicio = crearServicioClientes(crearRepoClientes(db), {
+    diasDeAviso: deps.diasDeAviso,
+  });
+  return { servicio, rutas: rutasClientes(servicio, deps) };
 }
 
-export type { ClienteVista, ServicioClientes } from './application/clientes.service';
+export type {
+  ClienteVista,
+  DatosDeCliente,
+  ServicioClientes,
+} from './application/clientes.service';
 export type { TipoCliente } from './domain/cliente';
 export { EXTENSIONES, nombreCompleto, normalizarIdentificador } from './domain/cliente';
-export { clienteInputSchema, listarQuerySchema } from './http/schemas';
+export {
+  bloqueoInputSchema,
+  clienteInputSchema,
+  listarQuerySchema,
+} from './http/schemas';

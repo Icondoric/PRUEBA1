@@ -5,52 +5,104 @@
  * deriva de las rutas el tipo exacto de cada endpoint, y el cliente de Vue lo
  * importa. Si mañana renombrás un campo en el backend, el frontend deja de
  * compilar en el acto, sin generar nada ni mantener tipos a mano.
+ *
+ * Quién puede llamar a cada ruta NO se decide acá ni en los módulos: está todo
+ * en `./acceso.ts`, y lo aplica el guardia antes de que el pedido llegue a
+ * cualquier ruta.
  */
 
 import { Hono } from 'hono';
-import { logger } from 'hono/logger';
+import type { Context } from 'hono';
+import { horasDeSesion } from '@/lib/config';
 import type { DB } from '@/lib/db';
-import { moduloCheckin } from '@/modules/checkin';
+import { DIAS_AVISO_VENCIMIENTO, moduloCheckin } from '@/modules/checkin';
 import { moduloClientes } from '@/modules/clientes';
 import { moduloMembresias } from '@/modules/membresias';
 import { moduloPagos } from '@/modules/pagos';
-import { moduloUsuarios } from '@/modules/usuarios';
+import { moduloPlanes } from '@/modules/planes';
+import { moduloReportes } from '@/modules/reportes';
+import { moduloUsuarios, puede } from '@/modules/usuarios';
 import { moduloVisitas } from '@/modules/visitas';
 import { manejadorDeErrores } from './middleware/errores';
+import {
+  cabecerasDeApi,
+  equipoDe,
+  frenoDeIngreso,
+  limiteDeCuerpo,
+  mismoOrigen,
+  registroDePedidos,
+} from './middleware/proteccion';
+import { type Entorno, guardia, usuarioDe } from './middleware/sesion';
 
-export function crearApp(db: DB) {
-  const clientes = moduloClientes(db);
-  const usuarios = moduloUsuarios(db);
-  // Provisorio hasta que haya login: ver modules/usuarios.
-  const operadorActual = () => usuarios.servicio.operadorActual().id;
+export interface OpcionesDeApp {
+  /** La hora real. Los tests la reemplazan para adelantar el reloj. */
+  ahora?: () => Date;
+  horasDeSesion?: number;
+}
 
+export function crearApp(db: DB, opciones: OpcionesDeApp = {}) {
+  const ahora = opciones.ahora ?? (() => new Date());
+
+  const usuarios = moduloUsuarios(db, {
+    horasDeSesion: opciones.horasDeSesion ?? horasDeSesion(),
+  });
+  const rutasDeUsuarios = usuarios.rutas({ usuarioActual: usuarioDe, ahora, equipoDe });
+
+  /** Quien inició sesión: queda como autor de lo que registre. */
+  const operadorActual = (c: Context) => usuarioDe(c).id;
+
+  const clientes = moduloClientes(db, {
+    puedeVerBajas: (c) => puede(usuarioDe(c), 'clientes.baja'),
+    diasDeAviso: DIAS_AVISO_VENCIMIENTO,
+    operadorActual,
+    ahora,
+  });
   const membresias = moduloMembresias(db, {
     clientes: clientes.servicio,
     operadorActual,
+    diasDeAviso: DIAS_AVISO_VENCIMIENTO,
   });
   const checkin = moduloCheckin(db, {
     clientes: clientes.servicio,
     membresias: membresias.servicio,
     operadorActual,
   });
-  const pagos = moduloPagos(db, { clientes: clientes.servicio });
+  const pagos = moduloPagos(db, {
+    clientes: clientes.servicio,
+    operadorActual,
+    ahora,
+    puedeVerOtrasFechas: (c) => puede(usuarioDe(c), 'pagos.otras_fechas'),
+  });
   const visitas = moduloVisitas(db, { clientes: clientes.servicio, operadorActual });
+  const reportes = moduloReportes(db);
+  const planes = moduloPlanes(db);
 
-  const app = new Hono()
-    .use('*', logger())
+  const app = new Hono<Entorno>()
+    .use('*', registroDePedidos())
     .onError(manejadorDeErrores)
     // Mismo contrato { error, mensaje } que el resto: una ruta de API que no
     // existe no debe devolver texto plano ni el HTML de la SPA.
     .notFound((c) =>
       c.json({ error: 'NO_ENCONTRADO', mensaje: 'Esa ruta no existe' }, 404),
     )
+    // Defensas que valen para cualquiera, antes de mirar quién es.
+    .use('/api/*', cabecerasDeApi())
+    .use('/api/*', mismoOrigen())
+    .use('/api/*', limiteDeCuerpo())
+    .use('/api/sesion', frenoDeIngreso(ahora))
+    // Nada de /api pasa de acá sin sesión y sin el acceso que le corresponde.
+    .use('/api/*', guardia(usuarios.servicio, ahora))
     .get('/api/salud', (c) => c.json({ ok: true }))
+    .route('/api/sesion', rutasDeUsuarios.sesion)
+    .route('/api/usuarios', rutasDeUsuarios.usuarios)
     .route('/api/clientes', clientes.rutas)
     .route('/api/planes', membresias.rutasPlanes)
+    .route('/api/gestion-planes', planes.rutas)
     .route('/api/membresias', membresias.rutas)
     .route('/api/checkin', checkin.rutas)
     .route('/api/pagos', pagos.rutas)
-    .route('/api/visitas', visitas.rutas);
+    .route('/api/visitas', visitas.rutas)
+    .route('/api/reportes', reportes.rutas);
 
   return app;
 }

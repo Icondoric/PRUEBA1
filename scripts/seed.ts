@@ -15,7 +15,6 @@
  * pasar por sus servicios, como ya hace con clientes.
  */
 
-import { randomBytes, scryptSync } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { count, eq } from 'drizzle-orm';
@@ -29,6 +28,7 @@ import {
   calcularPeriodo,
   resolverPrecio,
 } from '@/modules/membresias';
+import { PERMISOS_BASICOS, hashInutilizable } from '@/modules/usuarios';
 
 const decir = (linea = '') => process.stdout.write(`${linea}\n`);
 
@@ -424,21 +424,19 @@ function sembrar() {
   ); // prettier-ignore
 
   const resumen = db.transaction(() => {
-    // usuarios: para que creado_por / registrado_por nunca queden en null.
-    // La contraseña es aleatoria y no se muestra: hasta que exista el módulo
-    // de auth estas cuentas solo sirven de referencia para la auditoría.
-    const hashInutilizable = () => {
-      const sal = randomBytes(16);
-      return `scrypt$${sal.toString('hex')}$${scryptSync(randomBytes(24), sal, 64).toString('hex')}`;
-    };
-    db.insert(schema.usuarios)
-      .values({ usuario: 'admin', nombre: 'Administración', passwordHash: hashInutilizable(), rol: 'admin' })
-      .run(); // prettier-ignore
+    // Un usuario de recepción, para que creado_por / registrado_por del
+    // historial nunca queden en null. Su contraseña es aleatoria y no se
+    // muestra: nadie entra con esta cuenta hasta que el dueño le ponga una
+    // desde la pantalla de Usuarios. La cuenta del dueño NO se siembra: se
+    // crea con `pnpm usuarios:dueno`.
     const recepcion = db
       .insert(schema.usuarios)
       .values({ usuario: 'recepcion', nombre: 'Recepción', passwordHash: hashInutilizable(), rol: 'recepcion' })
       .returning()
       .get(); // prettier-ignore
+    db.insert(schema.usuarioPermisos)
+      .values(PERMISOS_BASICOS.map((permiso) => ({ usuarioId: recepcion.id, permiso })))
+      .run();
 
     // planes y precios
     const vigenteDesde = sumarDias(INICIO, -30);
@@ -770,6 +768,8 @@ function sembrar() {
   );
   decir(`  ${resumen.ingresos} ingresos (${resumen.rechazados} rechazados)`);
   decir(`  ${resumen.visitas} visitas gratis`);
+  decir();
+  decir('Para poder entrar al sistema, creá la cuenta del dueño:  pnpm usuarios:dueno');
 }
 
 sembrar();

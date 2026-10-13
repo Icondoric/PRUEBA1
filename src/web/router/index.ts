@@ -1,65 +1,152 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import type { Permiso } from '@/modules/usuarios/contrato';
+import {
+  type UsuarioSesion,
+  claveSesion,
+  consultaSesion,
+} from '@/web/features/sesion/api/sesion.api';
+import { avisarLoQueDejoLaNavegacion } from '@/web/shared/lib/avisos';
+import { avisarSiSePierdeLaSesion, queryClient } from '@/web/shared/lib/query';
+import { seccionesDe, tieneAcceso } from './secciones';
 
 declare module 'vue-router' {
   interface RouteMeta {
     titulo: string;
-    /** Pantalla completa, sin la barra lateral (el check-in). */
+    /** Pantalla completa, sin la barra lateral (el check-in, el ingreso). */
     kiosco?: boolean;
+    /** Se ve sin haber iniciado sesión. Solo la pantalla de ingreso. */
+    publica?: boolean;
+    /** Accesos que abren esta pantalla: alcanza con tener uno. */
+    permisos?: readonly Permiso[];
+    /** Solo para el dueño. No se delega. */
+    soloDueno?: boolean;
+    /** Muestra del sistema visual. Existe solo con `pnpm dev`; no pide sesión. */
+    muestra?: boolean;
   }
 }
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: { name: 'clientes' } },
+    // El resumen del día. Quien solo tiene el check-in va derecho ahí (lo
+    // decide el guard).
+    {
+      path: '/',
+      name: 'inicio',
+      component: () => import('@/web/features/inicio/views/InicioView.vue'),
+      meta: { titulo: 'Inicio' },
+    },
+    {
+      path: '/ingresar',
+      name: 'ingresar',
+      component: () => import('@/web/features/sesion/views/IngresarView.vue'),
+      meta: { titulo: 'Ingresar', kiosco: true, publica: true },
+    },
+    {
+      path: '/sin-acceso',
+      name: 'sin-acceso',
+      component: () => import('@/web/shared/layout/SinAccesoView.vue'),
+      meta: { titulo: 'Sin acceso' },
+    },
     {
       path: '/clientes',
       name: 'clientes',
       component: () => import('@/web/features/clientes/views/ClientesListaView.vue'),
-      meta: { titulo: 'Clientes' },
+      meta: { titulo: 'Clientes', permisos: ['clientes.gestionar', 'membresias.vender'] },
     },
     {
       path: '/clientes/nuevo',
       name: 'cliente-nuevo',
       component: () => import('@/web/features/clientes/views/ClienteFormView.vue'),
-      meta: { titulo: 'Registrar cliente' },
+      meta: { titulo: 'Registrar cliente', permisos: ['clientes.gestionar'] },
     },
     {
       path: '/clientes/:id(\\d+)',
       name: 'cliente-ficha',
       component: () => import('@/web/features/clientes/views/ClienteFichaView.vue'),
-      meta: { titulo: 'Ficha del cliente' },
+      meta: {
+        titulo: 'Ficha del cliente',
+        permisos: ['clientes.gestionar', 'membresias.vender'],
+      },
     },
     {
       path: '/clientes/:id(\\d+)/editar',
       name: 'cliente-editar',
       component: () => import('@/web/features/clientes/views/ClienteFormView.vue'),
-      meta: { titulo: 'Editar cliente' },
+      meta: { titulo: 'Editar cliente', permisos: ['clientes.gestionar'] },
     },
     {
       path: '/clientes/:id(\\d+)/membresias/nueva',
       name: 'membresia-nueva',
       component: () => import('@/web/features/membresias/views/MembresiaVentaView.vue'),
-      meta: { titulo: 'Vender membresía' },
+      meta: { titulo: 'Vender membresía', permisos: ['membresias.vender'] },
     },
     {
       path: '/pagos',
       name: 'pagos',
       component: () => import('@/web/features/pagos/views/PagosView.vue'),
-      meta: { titulo: 'Pagos' },
+      meta: { titulo: 'Pagos', permisos: ['pagos.caja_hoy', 'pagos.otras_fechas'] },
     },
     {
       path: '/visitas',
       name: 'visitas',
       component: () => import('@/web/features/visitas/views/VisitasView.vue'),
-      meta: { titulo: 'Visitas' },
+      meta: { titulo: 'Visitas', permisos: ['visitas.gestionar'] },
+    },
+    {
+      path: '/reportes',
+      name: 'reportes',
+      component: () => import('@/web/features/reportes/views/ReportesView.vue'),
+      meta: { titulo: 'Reportes', permisos: ['reportes.ver'] },
+    },
+    {
+      path: '/planes',
+      name: 'planes',
+      component: () => import('@/web/features/planes/views/PlanesView.vue'),
+      meta: { titulo: 'Planes y precios', permisos: ['planes.gestionar'] },
+    },
+    {
+      // De cualquiera que haya entrado: no pide ningún acceso.
+      path: '/mi-cuenta',
+      name: 'mi-cuenta',
+      component: () => import('@/web/features/sesion/views/MiCuentaView.vue'),
+      meta: { titulo: 'Mi cuenta' },
+    },
+    {
+      path: '/usuarios',
+      name: 'usuarios',
+      component: () => import('@/web/features/usuarios/views/UsuariosView.vue'),
+      meta: { titulo: 'Usuarios', soloDueno: true },
+    },
+    {
+      path: '/usuarios/nuevo',
+      name: 'usuario-nuevo',
+      component: () => import('@/web/features/usuarios/views/UsuarioFormView.vue'),
+      meta: { titulo: 'Crear usuario', soloDueno: true },
+    },
+    {
+      path: '/usuarios/:id(\\d+)',
+      name: 'usuario-editar',
+      component: () => import('@/web/features/usuarios/views/UsuarioFormView.vue'),
+      meta: { titulo: 'Editar usuario', soloDueno: true },
     },
     {
       path: '/checkin',
       name: 'checkin',
       component: () => import('@/web/features/checkin/views/CheckinView.vue'),
-      meta: { titulo: 'Check-in', kiosco: true },
+      meta: { titulo: 'Check-in', kiosco: true, permisos: ['checkin.usar'] },
     },
+    // No llega al build: es para revisar tokens y componentes en los dos modos.
+    ...(import.meta.env.DEV
+      ? [
+          {
+            path: '/muestra',
+            name: 'muestra',
+            component: () => import('@/web/features/muestra/views/MuestraView.vue'),
+            meta: { titulo: 'Muestra visual', kiosco: true, muestra: true },
+          },
+        ]
+      : []),
     {
       path: '/:resto(.*)*',
       name: 'no-encontrada',
@@ -71,6 +158,57 @@ export const router = createRouter({
   scrollBehavior: (_a, _de, guardada) => guardada ?? { top: 0 },
 });
 
+/**
+ * Antes de cada pantalla: ¿hay alguien adentro, y puede verla?
+ *
+ * Esto ordena la navegación; la seguridad de verdad está en el servidor, que
+ * revisa cada pedido por su cuenta.
+ */
+router.beforeEach(async (a) => {
+  if (a.meta.muestra) return true;
+
+  let usuario: UsuarioSesion | null;
+  try {
+    usuario = await queryClient.fetchQuery(consultaSesion);
+  } catch {
+    // El servidor no contesta. Se deja pasar: la pantalla va a mostrar su
+    // propio error de carga, con el botón para reintentar.
+    return true;
+  }
+
+  if (a.meta.publica) return usuario ? { name: 'inicio' } : true;
+
+  if (!usuario) {
+    return { name: 'ingresar', query: a.path === '/' ? {} : { volver: a.fullPath } };
+  }
+
+  if (a.name === 'inicio') {
+    const secciones = seccionesDe(usuario);
+    if (secciones.length === 0) return { name: 'sin-acceso' };
+    // La cuenta del kiosco (solo check-in) no tiene nada que resumir.
+    if (secciones.every((s) => s.ruta === 'checkin')) return { name: 'checkin' };
+    return true;
+  }
+
+  if (!tieneAcceso(usuario, a.meta)) return { name: 'sin-acceso' };
+
+  return true;
+});
+
 router.afterEach((a) => {
   document.title = `${a.meta.titulo} · Gimnasio`;
+  // "Cliente registrado", "Cambios guardados": lo deja el formulario al volver.
+  avisarLoQueDejoLaNavegacion();
+});
+
+// La sesión venció, o el dueño desactivó la cuenta, en medio del uso.
+avisarSiSePierdeLaSesion(() => {
+  const actual = router.currentRoute.value;
+  if (actual.meta.publica) return;
+
+  queryClient.setQueryData(claveSesion, null);
+  void router.replace({
+    name: 'ingresar',
+    query: { volver: actual.fullPath, motivo: 'vencida' },
+  });
 });

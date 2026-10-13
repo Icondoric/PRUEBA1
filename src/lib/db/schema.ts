@@ -81,6 +81,9 @@ export const clientes = sqliteTable(
     /** Bloqueo manual: rebota en el check-in aunque esté vigente. */
     bloqueado: integer('bloqueado', { mode: 'boolean' }).notNull().default(false),
     motivoBloqueo: text('motivo_bloqueo'),
+    /** Quién lo bloqueó y cuándo. Null si no está bloqueado. */
+    bloqueadoPor: integer('bloqueado_por').references(() => usuarios.id),
+    bloqueadoEn: integer('bloqueado_en', { mode: 'timestamp' }),
     notas: text('notas'),
     /** Soft delete. Los clientes no se borran. */
     activo: integer('activo', { mode: 'boolean' }).notNull().default(true),
@@ -188,6 +191,9 @@ export const pagos = sqliteTable(
     /** Un pago mal cargado se anula con motivo; no se borra. */
     anulado: integer('anulado', { mode: 'boolean' }).notNull().default(false),
     motivoAnulacion: text('motivo_anulacion'),
+    /** Quién lo anuló y cuándo. Null mientras el pago está vigente. */
+    anuladoPor: integer('anulado_por').references(() => usuarios.id),
+    anuladoEn: integer('anulado_en', { mode: 'timestamp' }),
     createdAt: ts('created_at'),
   },
   (t) => [
@@ -250,6 +256,51 @@ export const visitas = sqliteTable(
     nota: text('nota'),
   },
   (t) => [index('visitas_fecha_idx').on(t.fecha)],
+);
+
+// ─── accesos y sesiones ──────────────────────────────────────────────────────
+
+/**
+ * Los accesos que el dueño le dio a cada usuario, uno por fila.
+ *
+ * El rol `admin` (el dueño) tiene todo siempre y no necesita filas acá. Qué
+ * accesos existen lo define el código (modules/usuarios/domain/permisos.ts),
+ * no la base: por eso `permiso` es texto y no una tabla aparte.
+ */
+export const usuarioPermisos = sqliteTable(
+  'usuario_permisos',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    usuarioId: integer('usuario_id')
+      .notNull()
+      .references(() => usuarios.id),
+    permiso: text('permiso').notNull(),
+    otorgadoPor: integer('otorgado_por').references(() => usuarios.id),
+    createdAt: ts('created_at'),
+  },
+  (t) => [uniqueIndex('usuario_permisos_unq').on(t.usuarioId, t.permiso)],
+);
+
+/**
+ * Sesiones abiertas. Se guarda el hash del token, nunca el token: quien lea la
+ * base (o un respaldo) no puede hacerse pasar por nadie.
+ */
+export const sesiones = sqliteTable(
+  'sesiones',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    tokenHash: text('token_hash').notNull(),
+    usuarioId: integer('usuario_id')
+      .notNull()
+      .references(() => usuarios.id),
+    createdAt: ts('created_at'),
+    /** La sesión vence por inactividad, contando desde acá. */
+    ultimoUso: integer('ultimo_uso', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => [
+    uniqueIndex('sesiones_token_unq').on(t.tokenHash),
+    index('sesiones_usuario_idx').on(t.usuarioId),
+  ],
 );
 
 // ─── relaciones ──────────────────────────────────────────────────────────────

@@ -26,6 +26,24 @@ const id = computed(() =>
 const editando = computed(() => id.value > 0);
 
 const { data: cliente, error: errorDeCarga, isFetching, refetch } = useCliente(id);
+// Quién lo refirió se guarda como cliente, pero se edita por número de socio:
+// hay que esperar a tenerlo para armar el formulario con el campo ya lleno.
+const { data: padrino, isPending: buscandoPadrino } = useCliente(
+  () => cliente.value?.referidoPorClienteId ?? 0,
+);
+const listoParaEditar = computed(
+  () =>
+    !!cliente.value && (!cliente.value.referidoPorClienteId || !buscandoPadrino.value),
+);
+const inicial = computed(() =>
+  cliente.value
+    ? {
+        ...cliente.value,
+        referidoPor: padrino.value ? String(padrino.value.nroSocio) : '',
+      }
+    : undefined,
+);
+
 const registrar = useRegistrarCliente();
 const actualizar = useActualizarCliente();
 
@@ -71,13 +89,13 @@ async function guardar(datos: DatosCliente) {
   <div class="space-y-6">
     <RouterLink
       :to="volver"
-      class="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex items-center gap-1.5 rounded-sm text-sm outline-none focus-visible:ring-3"
+      class="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-sm text-sm outline-none focus-visible:ring-3"
     >
       <ArrowLeft class="size-4" aria-hidden="true" />
       {{ editando ? 'Ficha del cliente' : 'Clientes' }}
     </RouterLink>
 
-    <h1 tabindex="-1" class="text-2xl font-semibold tracking-tight">
+    <h1 tabindex="-1" class="titulo-pantalla">
       {{ editando ? 'Editar cliente' : 'Registrar cliente' }}
     </h1>
 
@@ -91,9 +109,9 @@ async function guardar(datos: DatosCliente) {
 
     <!-- La `key` rearma el formulario con los datos del cliente cuando llegan. -->
     <ClienteForm
-      v-else-if="!editando || cliente"
+      v-else-if="!editando || listoParaEditar"
       :key="cliente?.id ?? 'nuevo'"
-      :inicial="cliente"
+      :inicial="inicial"
       :texto-guardar="editando ? 'Guardar cambios' : 'Registrar cliente'"
       :guardando="guardando"
       :error="errorAlGuardar"
