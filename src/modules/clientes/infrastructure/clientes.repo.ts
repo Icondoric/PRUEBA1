@@ -16,7 +16,14 @@ import type { ClienteNormalizado } from '../domain/cliente';
 
 export type ClienteFila = typeof clientes.$inferSelect;
 
+export type FiltroDeMembresia = 'al_dia' | 'por_vencer' | 'vencida' | 'sin_membresia';
+
 export interface FiltroBusqueda {
+  /** Cómo está su membresía. Necesita `hoy` y `avisoHasta`; sin ellos no filtra. */
+  membresia?: FiltroDeMembresia;
+  hoy?: string;
+  /** Último día que todavía cuenta como "por vencer". */
+  avisoHasta?: string;
   texto?: string;
   /** 'socio' | 'eventual' | undefined (todos) */
   tipo?: 'socio' | 'eventual';
@@ -170,6 +177,32 @@ export function crearRepoClientes(db: DB) {
 
       if (f.tipo === 'socio') condiciones.push(sql`${tieneMensualidad}`);
       if (f.tipo === 'eventual') condiciones.push(sql`NOT ${tieneMensualidad}`);
+
+      // Situación de la membresía, DERIVADA de las fechas (nunca guardada). Las
+      // fechas son texto AAAA-MM-DD: se comparan como texto.
+      if (f.membresia && f.hoy && f.avisoHasta) {
+        // Hasta cuándo tiene pago, sin contar lo cancelado.
+        const pagoHasta = sql`(
+          SELECT MAX(${membresias.fechaFin}) FROM ${membresias}
+          WHERE ${membresias.clienteId} = ${clientes.id}
+            AND ${membresias.estado} <> 'cancelada'
+        )`;
+        // Lo mismo, pero solo de planes: un pase por sesión no se "renueva".
+        const planHasta = sql`(
+          SELECT MAX(${membresias.fechaFin}) FROM ${membresias}
+          JOIN ${planes} ON ${planes.id} = ${membresias.planId}
+          WHERE ${membresias.clienteId} = ${clientes.id}
+            AND ${membresias.estado} <> 'cancelada'
+            AND ${planes.esPaseDiario} = 0
+        )`;
+        const porSituacion = {
+          al_dia: sql`${pagoHasta} >= ${f.hoy}`,
+          vencida: sql`${pagoHasta} < ${f.hoy}`,
+          sin_membresia: sql`${pagoHasta} IS NULL`,
+          por_vencer: sql`(${planHasta} >= ${f.hoy} AND ${planHasta} <= ${f.avisoHasta})`,
+        };
+        condiciones.push(porSituacion[f.membresia]);
+      }
 
       const donde = and(...condiciones);
 

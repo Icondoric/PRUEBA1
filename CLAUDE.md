@@ -183,6 +183,10 @@ Decidido con el usuario (2026-10-11):
 - **Toda ruta de la API está cerrada salvo que `src/server/acceso.ts` diga
   quién puede usarla.** Ruta nueva = una línea en esa tabla. Sin la línea,
   queda cerrada para todos, y hay un test que falla.
+- Antes del guardia corren las defensas de `src/server/middleware/proteccion.ts`
+  (cabeceras, origen del pedido, tamaño, tope de intentos de ingreso). Qué
+  cubren y qué queda pendiente: `docs/SEGURIDAD.md`. Todo texto de un esquema
+  nuevo lleva tope de largo, y nada que cambie datos va por GET.
 - Las rutas y los servicios NO revisan accesos por su cuenta: lo hace el
   guardia (`src/server/middleware/sesion.ts`) antes de que el pedido llegue.
   La única excepción es cuando depende del contenido del pedido (ver la caja

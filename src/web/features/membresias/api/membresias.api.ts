@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, type MaybeRefOrGetter, toValue } from 'vue';
 import type { z } from 'zod';
 import type {
+  CoberturasDeClientes,
   CotizacionVista,
   HistorialMembresias,
   PlanesConPrecio,
@@ -20,6 +21,7 @@ export const clavesMembresias = {
   todo: ['membresias'] as const,
   planes: ['membresias', 'planes'] as const,
   historial: (clienteId: number) => ['membresias', 'historial', clienteId] as const,
+  coberturas: (clienteIds: number[]) => ['membresias', 'coberturas', clienteIds] as const,
   cotizacion: (params: unknown) => ['membresias', 'cotizacion', params] as const,
 };
 
@@ -48,6 +50,24 @@ export function useHistorialMembresias(clienteId: MaybeRefOrGetter<number>) {
         api.membresias.$get({ query: { clienteId: String(toValue(clienteId)) } }),
       ),
     enabled: computed(() => toValue(clienteId) > 0),
+  });
+}
+
+/**
+ * Cómo está la membresía de varios clientes a la vez: los de una página de la
+ * lista, en una sola consulta.
+ */
+export function useCoberturas(clienteIds: MaybeRefOrGetter<number[]>) {
+  const ids = computed(() => toValue(clienteIds));
+  return useQuery({
+    queryKey: computed(() => clavesMembresias.coberturas(ids.value)),
+    queryFn: () =>
+      pedir<CoberturasDeClientes>(
+        api.membresias.coberturas.$get({ query: { clienteIds: ids.value.join(',') } }),
+      ),
+    enabled: computed(() => ids.value.length > 0),
+    // Al cambiar de página se sigue viendo lo anterior hasta que llega lo nuevo.
+    placeholderData: (anterior) => anterior,
   });
 }
 

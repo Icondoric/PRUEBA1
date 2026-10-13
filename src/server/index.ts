@@ -13,10 +13,9 @@
 
 import { Hono } from 'hono';
 import type { Context } from 'hono';
-import { logger } from 'hono/logger';
 import { horasDeSesion } from '@/lib/config';
 import type { DB } from '@/lib/db';
-import { moduloCheckin } from '@/modules/checkin';
+import { DIAS_AVISO_VENCIMIENTO, moduloCheckin } from '@/modules/checkin';
 import { moduloClientes } from '@/modules/clientes';
 import { moduloMembresias } from '@/modules/membresias';
 import { moduloPagos } from '@/modules/pagos';
@@ -25,6 +24,14 @@ import { moduloReportes } from '@/modules/reportes';
 import { moduloUsuarios, puede } from '@/modules/usuarios';
 import { moduloVisitas } from '@/modules/visitas';
 import { manejadorDeErrores } from './middleware/errores';
+import {
+  cabecerasDeApi,
+  equipoDe,
+  frenoDeIngreso,
+  limiteDeCuerpo,
+  mismoOrigen,
+  registroDePedidos,
+} from './middleware/proteccion';
 import { type Entorno, guardia, usuarioDe } from './middleware/sesion';
 
 export interface OpcionesDeApp {
@@ -39,19 +46,21 @@ export function crearApp(db: DB, opciones: OpcionesDeApp = {}) {
   const usuarios = moduloUsuarios(db, {
     horasDeSesion: opciones.horasDeSesion ?? horasDeSesion(),
   });
-  const rutasDeUsuarios = usuarios.rutas({ usuarioActual: usuarioDe, ahora });
+  const rutasDeUsuarios = usuarios.rutas({ usuarioActual: usuarioDe, ahora, equipoDe });
 
   /** Quien inició sesión: queda como autor de lo que registre. */
   const operadorActual = (c: Context) => usuarioDe(c).id;
 
   const clientes = moduloClientes(db, {
     puedeVerBajas: (c) => puede(usuarioDe(c), 'clientes.baja'),
+    diasDeAviso: DIAS_AVISO_VENCIMIENTO,
     operadorActual,
     ahora,
   });
   const membresias = moduloMembresias(db, {
     clientes: clientes.servicio,
     operadorActual,
+    diasDeAviso: DIAS_AVISO_VENCIMIENTO,
   });
   const checkin = moduloCheckin(db, {
     clientes: clientes.servicio,
@@ -69,13 +78,18 @@ export function crearApp(db: DB, opciones: OpcionesDeApp = {}) {
   const planes = moduloPlanes(db);
 
   const app = new Hono<Entorno>()
-    .use('*', logger())
+    .use('*', registroDePedidos())
     .onError(manejadorDeErrores)
     // Mismo contrato { error, mensaje } que el resto: una ruta de API que no
     // existe no debe devolver texto plano ni el HTML de la SPA.
     .notFound((c) =>
       c.json({ error: 'NO_ENCONTRADO', mensaje: 'Esa ruta no existe' }, 404),
     )
+    // Defensas que valen para cualquiera, antes de mirar quién es.
+    .use('/api/*', cabecerasDeApi())
+    .use('/api/*', mismoOrigen())
+    .use('/api/*', limiteDeCuerpo())
+    .use('/api/sesion', frenoDeIngreso(ahora))
     // Nada de /api pasa de acá sin sesión y sin el acceso que le corresponde.
     .use('/api/*', guardia(usuarios.servicio, ahora))
     .get('/api/salud', (c) => c.json({ ok: true }))

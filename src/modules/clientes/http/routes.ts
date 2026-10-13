@@ -23,6 +23,7 @@ import {
   bloqueoInputSchema,
   clienteInputSchema,
   idParamSchema,
+  identificadorParamSchema,
   listarQuerySchema,
 } from './schemas';
 
@@ -33,6 +34,8 @@ export interface DepsDeClientes {
   operadorActual: (c: Context) => number;
   /** La hora real, para registrar cuándo se bloqueó. */
   ahora: () => Date;
+  /** Con cuántos días de anticipación una membresía cuenta como "por vencer". */
+  diasDeAviso?: number;
 }
 
 export function rutasClientes(servicio: ServicioClientes, deps: DepsDeClientes) {
@@ -44,14 +47,21 @@ export function rutasClientes(servicio: ServicioClientes, deps: DepsDeClientes) 
           servicio.listar(
             { ...filtro, deBaja: estado === 'baja' },
             deps.puedeVerBajas(c),
+            hoyEnZona(),
           ),
         );
       })
 
-      .get('/buscar/:identificador', (c) => {
-        const cliente = servicio.buscarPorIdentificador(c.req.param('identificador'));
-        return c.json({ cliente });
-      })
+      .get(
+        '/buscar/:identificador',
+        zValidator('param', identificadorParamSchema),
+        (c) => {
+          const cliente = servicio.buscarPorIdentificador(
+            c.req.valid('param').identificador,
+          );
+          return c.json({ cliente });
+        },
+      )
 
       .get('/:id', zValidator('param', idParamSchema), (c) =>
         c.json(servicio.obtener(c.req.valid('param').id)),

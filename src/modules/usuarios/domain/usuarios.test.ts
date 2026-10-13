@@ -96,7 +96,14 @@ describe('usuario y contraseña', () => {
 
   it('la contraseña necesita al menos 8 caracteres', () => {
     expect(() => validarPassword('1234567')).toThrow(ReglaDeNegocioError);
-    expect(validarPassword('12345678')).toBe('12345678');
+    expect(validarPassword('caja-9-x')).toBe('caja-9-x');
+  });
+
+  it('rechaza las que probaría cualquiera primero', () => {
+    expect(() => validarPassword('12345678')).toThrow(ReglaDeNegocioError);
+    expect(() => validarPassword('Password123')).toThrow(ReglaDeNegocioError);
+    expect(() => validarPassword('aaaaaaaaaa')).toThrow(ReglaDeNegocioError);
+    expect(validarPassword('pesas-y-mancuernas')).toBe('pesas-y-mancuernas');
   });
 });
 

@@ -15,7 +15,7 @@ import {
   ReglaDeNegocioError,
   SinPermisoError,
 } from '@/lib/errors';
-import type { FechaISO } from '@/lib/fechas';
+import { type FechaISO, sumarDias } from '@/lib/fechas';
 import {
   type DatosNuevoCliente,
   type TipoCliente,
@@ -49,7 +49,13 @@ export interface DatosDeCliente extends DatosNuevoCliente {
   referidoPor?: string | null;
 }
 
-export function crearServicioClientes(repo: RepoClientes) {
+export function crearServicioClientes(
+  repo: RepoClientes,
+  /** Con cuántos días de anticipación se avisa: el mismo aviso del check-in. */
+  opciones: { diasDeAviso?: number } = {},
+) {
+  const diasDeAviso = opciones.diasDeAviso ?? 3;
+
   function decorar(fila: ClienteFila): ClienteVista {
     return {
       ...fila,
@@ -131,11 +137,17 @@ export function crearServicioClientes(repo: RepoClientes) {
     /**
      * @param puedeVerBajas los dados de baja los ve quien puede reactivarlos.
      */
-    listar(filtro: FiltroBusqueda, puedeVerBajas = false) {
+    /**
+     * @param hoy para filtrar por cómo está la membresía. Sin fecha, ese filtro
+     *   no se aplica.
+     */
+    listar(filtro: FiltroBusqueda, puedeVerBajas = false, hoy?: FechaISO) {
       if (filtro.deBaja && !puedeVerBajas) {
         throw new SinPermisoError('Tu usuario no puede ver a los clientes dados de baja');
       }
-      const { filas, total } = repo.buscar(filtro);
+      const { filas, total } = repo.buscar(
+        hoy ? { ...filtro, hoy, avisoHasta: sumarDias(hoy, diasDeAviso) } : filtro,
+      );
       return {
         clientes: filas.map(decorar),
         total,

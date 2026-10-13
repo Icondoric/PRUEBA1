@@ -183,7 +183,7 @@ async function cambiarEstado(activo: boolean) {
 </script>
 
 <template>
-  <div class="max-w-3xl space-y-8">
+  <div class="max-w-6xl space-y-8">
     <RouterLink
       :to="{ name: 'usuarios' }"
       class="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-sm text-sm outline-none focus-visible:ring-3"

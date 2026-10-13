@@ -7,12 +7,18 @@ import { ArrowLeft, Ban, Pencil } from '@lucide/vue';
 import { refDebounced } from '@vueuse/core';
 import { computed } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
+import { useAsistencia } from '@/web/features/checkin/api/checkin.api';
 import MembresiasDelCliente from '@/web/features/membresias/components/MembresiasDelCliente.vue';
 import PagosDelCliente from '@/web/features/pagos/components/PagosDelCliente.vue';
 import { useAccesos } from '@/web/features/sesion/api/sesion.api';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
 import { ErrorDeApi } from '@/web/shared/lib/api';
-import { formatearCi, formatearFecha, formatearMomento } from '@/web/shared/lib/formato';
+import {
+  formatearCi,
+  formatearFecha,
+  formatearMomento,
+  plural,
+} from '@/web/shared/lib/formato';
 import { Button } from '@/web/shared/ui/button';
 import { Skeleton } from '@/web/shared/ui/skeleton';
 import { useCliente } from '../api/clientes.api';
@@ -24,6 +30,18 @@ const { puede } = useAccesos();
 const id = computed(() => Number(route.params.id));
 
 const { data: cliente, error, isPending, isFetching, refetch } = useCliente(id);
+
+// Cuándo vino por última vez. Si falla o tarda, la ficha se muestra igual.
+const { data: asistencia } = useAsistencia(id);
+const ultimaVisita = computed(() => {
+  const a = asistencia.value;
+  if (!a) return '';
+  if (a.haceDias === null) return 'Todavía no entró nunca';
+  const fecha = formatearFecha(a.ultimoIngreso);
+  if (a.haceDias === 0) return `Hoy, ${fecha}`;
+  if (a.haceDias === 1) return `Ayer, ${fecha}`;
+  return `Hace ${plural(a.haceDias, 'día', 'días')}, el ${fecha}`;
+});
 
 // Quién lo trajo: se resuelve a nombre con la misma query de siempre.
 const { data: padrino } = useCliente(() => cliente.value?.referidoPorClienteId ?? 0);
@@ -37,7 +55,7 @@ const mostrarEsqueleto = computed(() => isPending.value && tardando.value);
 </script>
 
 <template>
-  <div class="max-w-3xl space-y-6">
+  <div class="max-w-7xl space-y-6">
     <RouterLink
       :to="{ name: 'clientes' }"
       class="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-sm text-sm outline-none focus-visible:ring-3"
@@ -99,59 +117,87 @@ const mostrarEsqueleto = computed(() => isPending.value && tardando.value);
         </div>
       </div>
 
-      <dl class="grid gap-x-8 gap-y-5 rounded-lg border p-5 sm:grid-cols-2">
-        <div class="space-y-1">
-          <dt class="text-muted-foreground text-sm">Nº de socio</dt>
-          <dd class="text-sm font-medium tabular-nums">{{ cliente.nroSocio }}</dd>
-        </div>
-        <div class="space-y-1">
-          <dt class="text-muted-foreground text-sm">CI</dt>
-          <dd class="text-sm font-medium tabular-nums">
-            {{ formatearCi(cliente.ci, cliente.ciExtension) }}
-          </dd>
-        </div>
-        <div class="space-y-1">
-          <dt class="text-muted-foreground text-sm">Teléfono</dt>
-          <dd class="text-sm font-medium tabular-nums">{{ cliente.telefono ?? '—' }}</dd>
-        </div>
-        <div class="space-y-1">
-          <dt class="text-muted-foreground text-sm">Fecha de registro</dt>
-          <dd class="text-sm font-medium tabular-nums">
-            {{ formatearFecha(cliente.fechaRegistro) }}
-          </dd>
-        </div>
-        <div v-if="cliente.referidoPorClienteId" class="space-y-1">
-          <dt class="text-muted-foreground text-sm">Referido por</dt>
-          <dd class="text-sm font-medium">
-            <RouterLink
-              :to="{
-                name: 'cliente-ficha',
-                params: { id: cliente.referidoPorClienteId },
-              }"
-              class="focus-visible:ring-ring rounded-sm underline underline-offset-4 outline-none focus-visible:ring-3"
-            >
-              {{
-                padrino
-                  ? `${padrino.nombreCompleto} (socio nº ${padrino.nroSocio})`
-                  : 'Ver ficha'
-              }}
-            </RouterLink>
-          </dd>
-        </div>
-        <div v-if="cliente.notas" class="space-y-1 sm:col-span-2">
-          <dt class="text-muted-foreground text-sm">Notas</dt>
-          <dd class="max-w-prose text-sm">{{ cliente.notas }}</dd>
-        </div>
-      </dl>
+      <!-- En angosto va todo en una columna, en este orden. Desde 1280 px:
+           datos y estado a la izquierda, membresía y pagos a la derecha. -->
+      <div
+        class="grid gap-6 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] xl:grid-rows-[auto_1fr] xl:items-start xl:gap-x-8"
+      >
+        <dl
+          class="bg-card grid grid-cols-2 gap-x-6 gap-y-5 rounded-xl border p-5 xl:col-start-1 xl:row-start-1"
+        >
+          <div class="space-y-1">
+            <dt class="text-muted-foreground text-sm">Nº de socio</dt>
+            <dd class="text-sm font-medium tabular-nums">{{ cliente.nroSocio }}</dd>
+          </div>
+          <div class="space-y-1">
+            <dt class="text-muted-foreground text-sm">CI</dt>
+            <dd class="text-sm font-medium tabular-nums">
+              {{ formatearCi(cliente.ci, cliente.ciExtension) }}
+            </dd>
+          </div>
+          <div class="space-y-1">
+            <dt class="text-muted-foreground text-sm">Teléfono</dt>
+            <dd class="text-sm font-medium tabular-nums">
+              {{ cliente.telefono ?? '—' }}
+            </dd>
+          </div>
+          <div class="space-y-1">
+            <dt class="text-muted-foreground text-sm">Fecha de registro</dt>
+            <dd class="text-sm font-medium tabular-nums">
+              {{ formatearFecha(cliente.fechaRegistro) }}
+            </dd>
+          </div>
+          <template v-if="asistencia">
+            <div class="space-y-1">
+              <dt class="text-muted-foreground text-sm">Última visita</dt>
+              <dd class="text-sm font-medium tabular-nums">{{ ultimaVisita }}</dd>
+            </div>
+            <div class="space-y-1">
+              <dt class="text-muted-foreground text-sm">
+                Vino en los últimos {{ asistencia.enDias }} días
+              </dt>
+              <dd class="text-sm font-medium tabular-nums">
+                {{ plural(asistencia.diasQueVino, 'día', 'días') }}
+              </dd>
+            </div>
+          </template>
+          <div v-if="cliente.referidoPorClienteId" class="space-y-1">
+            <dt class="text-muted-foreground text-sm">Referido por</dt>
+            <dd class="text-sm font-medium">
+              <RouterLink
+                :to="{
+                  name: 'cliente-ficha',
+                  params: { id: cliente.referidoPorClienteId },
+                }"
+                class="focus-visible:ring-ring rounded-sm underline underline-offset-4 outline-none focus-visible:ring-3"
+              >
+                {{
+                  padrino
+                    ? `${padrino.nombreCompleto} (socio nº ${padrino.nroSocio})`
+                    : 'Ver ficha'
+                }}
+              </RouterLink>
+            </dd>
+          </div>
+          <div v-if="cliente.notas" class="col-span-2 space-y-1">
+            <dt class="text-muted-foreground text-sm">Notas</dt>
+            <dd class="max-w-prose text-sm">{{ cliente.notas }}</dd>
+          </div>
+        </dl>
 
-      <MembresiasDelCliente :cliente-id="cliente.id" />
+        <div class="min-w-0 space-y-6 xl:col-start-2 xl:row-span-2 xl:row-start-1">
+          <MembresiasDelCliente :cliente-id="cliente.id" />
 
-      <PagosDelCliente
-        v-if="puede('clientes.gestionar') || puede('pagos.caja_hoy')"
-        :cliente-id="cliente.id"
-      />
+          <PagosDelCliente
+            v-if="puede('clientes.gestionar') || puede('pagos.caja_hoy')"
+            :cliente-id="cliente.id"
+          />
+        </div>
 
-      <EstadoDelCliente :cliente="cliente" />
+        <div class="min-w-0 xl:col-start-1 xl:row-start-2">
+          <EstadoDelCliente :cliente="cliente" />
+        </div>
+      </div>
     </template>
 
     <template v-else>

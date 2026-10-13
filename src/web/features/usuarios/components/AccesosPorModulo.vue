@@ -38,7 +38,7 @@ const esBasico = (clave: string) => props.basicos.includes(clave);
       </Button>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2">
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <fieldset
         v-for="modulo in catalogo"
         :key="modulo.modulo"

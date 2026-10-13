@@ -34,6 +34,18 @@ export function hashInutilizable(): string {
   return hashearPassword(randomBytes(32).toString('hex'));
 }
 
+let senuelo: string | undefined;
+
+/**
+ * Gasta lo mismo que verificar una contraseña de verdad, contra un hash que no
+ * es de nadie. Se usa cuando el usuario no existe: si esa respuesta saliera
+ * más rápido, el tiempo solo alcanzaría para averiguar qué cuentas existen.
+ */
+export function gastarComoVerificacion(password: string): void {
+  senuelo ??= hashInutilizable();
+  passwordCoincide(password, senuelo);
+}
+
 /** El token viaja en la cookie; en la base queda solo su hash. */
 export function nuevoToken(): string {
   return randomBytes(32).toString('base64url');

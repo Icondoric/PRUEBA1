@@ -64,6 +64,45 @@ en `/muestra`, Clientes y Reportes:
 - Pendiente: los diálogos entran animados pero salen de golpe (se desmontan al
   cerrar); resolver al unificarlos en un componente base.
 
+**Cuarta tanda (2026-10-12) — usabilidad de lista, ficha y venta:**
+
+- `membresias/components/EstadoDeMembresia.vue` (nuevo): la situación de la
+  membresía en una línea, con ícono y texto. Se usa en la lista de clientes.
+  Pendiente: usarlo también en Reportes y en el panel del pase.
+- Lista de clientes: columna "Membresía" y filtro por situación. En angosto
+  quedan nº, nombre y membresía.
+- Ficha: última visita y días que vino; recuadro de membresía destacado
+  cuando vence o venció; "Anular pago" como botón con borde.
+- Venta: plan sugerido al renovar, planes antes que el pase, y ya usa
+  `ControlSegmentado` (cómo pagó) y `ui/checkbox` (otra fecha).
+- Siguen con casillas nativas: accesos de usuarios y el diálogo de plan.
+  Siguen con radios sueltos: el panel del pase del check-in.
+
+**Quinta tanda (2026-10-12) — inicio y menú del celular:**
+
+- `features/inicio/` (nuevo): `views/InicioView.vue` y sus componentes
+  `CajaResumen`, `CobradoHoy`, `ClientesSegunMembresia`, `NumerosDeHoy` y
+  `VencenEstosDias`. Revisada en claro y oscuro, a 1280 y a 390 px, con la
+  cuenta del dueño. **Falta verla con una cuenta de recepción** (menos
+  bloques) y unificar `CajaResumen` con las cajas de Reportes y de Pagos.
+- `layout/AppLayout.vue`: enlace "Inicio" y, en angosto, botón "Menú" que
+  abre un panel lateral (`<dialog>`). Resuelve el pendiente de "con siete
+  secciones conviene un menú propio para celular". El panel entra con la
+  animación común de los diálogos; falta que entre desde el costado.
+
+**Sexta tanda (2026-10-13) — anchos:** medidas las doce pantallas a 390, 768,
+1024, 1440 y 1920 px. Sin desbordes ni tablas que se deslicen de costado en
+ninguna. Reglas en `docs/ESTILO.md`, sección "Anchos".
+
+- Menú lateral desde 1024 px (antes 768).
+- Dos columnas en pantalla grande: ficha, venta, visitas, reportes, planes.
+- Tablas que se reacomodan en angosto: membresías y pagos de la ficha,
+  Pagos, Visitas, precios de Planes y Usuarios.
+- Sin revisar a estos anchos: diálogos, check-in, editar usuario y el modo
+  claro. En el celular quedan controles de menos de 36 px de alto en la
+  venta y en los accesos de usuarios (casillas y radios; toda la fila es
+  tocable).
+
 **Respuestas del usuario:** nombre "Gimnasio" por ahora; el logo llega después
 (dejarle el lugar en el menú y en el ingreso); sin fecha fija ("con calma pero
 bien"); PC posiblemente modesta (poco desenfoque); monitor del check-in de 19"

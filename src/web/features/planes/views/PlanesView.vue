@@ -94,7 +94,7 @@ function confirmarQuitar() {
 </script>
 
 <template>
-  <div class="max-w-4xl space-y-6">
+  <div class="max-w-[90rem] space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="space-y-1">
         <h1 tabindex="-1" class="titulo-pantalla">Planes y precios</h1>
@@ -126,140 +126,142 @@ function confirmarQuitar() {
         Todavía no hay planes. Creá el primero para poder vender.
       </p>
 
-      <section
-        v-for="plan in data.planes"
-        :key="plan.id"
-        :aria-labelledby="`plan-titulo-${plan.id}`"
-        class="space-y-4 rounded-lg border p-5"
-      >
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div class="space-y-1.5">
-            <h2
-              :id="`plan-titulo-${plan.id}`"
-              class="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight"
+      <div class="grid gap-6 xl:grid-cols-2 xl:items-start">
+        <section
+          v-for="plan in data.planes"
+          :key="plan.id"
+          :aria-labelledby="`plan-titulo-${plan.id}`"
+          class="bg-card min-w-0 space-y-4 rounded-xl border p-5"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="space-y-1.5">
+              <h2
+                :id="`plan-titulo-${plan.id}`"
+                class="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight"
+              >
+                {{ plan.nombre }}
+                <Badge v-if="plan.esPaseDiario" variant="outline">Pase por sesión</Badge>
+                <Badge v-if="!plan.activo" variant="outline">Dado de baja</Badge>
+              </h2>
+              <p class="text-muted-foreground text-sm">
+                {{
+                  plan.esPaseDiario
+                    ? 'Vale el día que se paga'
+                    : `Dura ${plural(plan.diasDuracion, 'día', 'días')}`
+                }}
+              </p>
+            </div>
+
+            <div class="text-right">
+              <p class="text-muted-foreground text-sm">Se cobra hoy</p>
+              <p class="text-2xl font-semibold tracking-tight tabular-nums">
+                {{
+                  plan.precioHoy
+                    ? formatearBs(plan.precioHoy.precioCentavos)
+                    : 'Sin precio'
+                }}
+              </p>
+              <p v-if="plan.precioHoy?.esPromocion" class="text-muted-foreground text-xs">
+                {{ plan.precioHoy.etiqueta ?? 'Promoción' }}
+              </p>
+              <p v-if="!plan.precioHoy" class="text-destructive text-xs">
+                Sin precio no se puede vender
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              @click="abrir({ tipo: 'precio', plan, esPromocion: false })"
             >
-              {{ plan.nombre }}
-              <Badge v-if="plan.esPaseDiario" variant="outline">Pase por sesión</Badge>
-              <Badge v-if="!plan.activo" variant="outline">Dado de baja</Badge>
-            </h2>
-            <p class="text-muted-foreground text-sm">
-              {{
-                plan.esPaseDiario
-                  ? 'Vale el día que se paga'
-                  : `Dura ${plural(plan.diasDuracion, 'día', 'días')}`
-              }}
-            </p>
+              Cambiar precio
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              @click="abrir({ tipo: 'precio', plan, esPromocion: true })"
+            >
+              Cargar promoción
+            </Button>
+            <Button size="sm" variant="ghost" @click="abrir({ tipo: 'renombrar', plan })">
+              Cambiar nombre
+            </Button>
+            <Button
+              v-if="plan.activo"
+              size="sm"
+              variant="ghost"
+              @click="abrir({ tipo: 'baja', plan })"
+            >
+              Dar de baja plan
+            </Button>
+            <Button
+              v-else
+              size="sm"
+              variant="ghost"
+              :disabled="cambiarEstado.isPending.value"
+              @click="
+                hacer(
+                  () => cambiarEstado.mutateAsync({ id: plan.id, activo: true }),
+                  'El plan se vuelve a ofrecer.',
+                )
+              "
+            >
+              Volver a ofrecer plan
+            </Button>
           </div>
 
-          <div class="text-right">
-            <p class="text-muted-foreground text-sm">Se cobra hoy</p>
-            <p class="text-2xl font-semibold tracking-tight tabular-nums">
-              {{
-                plan.precioHoy ? formatearBs(plan.precioHoy.precioCentavos) : 'Sin precio'
-              }}
-            </p>
-            <p v-if="plan.precioHoy?.esPromocion" class="text-muted-foreground text-xs">
-              {{ plan.precioHoy.etiqueta ?? 'Promoción' }}
-            </p>
-            <p v-if="!plan.precioHoy" class="text-destructive text-xs">
-              Sin precio no se puede vender
-            </p>
+          <div v-if="plan.precios.length > 0" class="overflow-hidden rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead class="w-24 text-right sm:w-32">Precio</TableHead>
+                  <TableHead>Tipo y vigencia</TableHead>
+                  <TableHead class="w-32 sm:w-44">Estado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="precio in plan.precios" :key="precio.id" class="h-11">
+                  <TableCell class="text-right tabular-nums">
+                    {{ formatearBs(precio.precioCentavos, { conCentavos: true }) }}
+                  </TableCell>
+                  <TableCell class="whitespace-normal">
+                    {{
+                      precio.esPromocion
+                        ? (precio.etiqueta ?? 'Promoción')
+                        : 'Precio habitual'
+                    }}
+                    <span class="text-muted-foreground block text-xs tabular-nums">
+                      Desde el {{ formatearFecha(precio.vigenteDesde) }}
+                      <template v-if="precio.vigenteHasta">
+                        hasta el {{ formatearFecha(precio.vigenteHasta) }}
+                      </template>
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span class="flex flex-wrap items-center gap-2">
+                      <Badge
+                        :variant="precio.estado === 'vigente' ? 'secondary' : 'outline'"
+                      >
+                        {{ ESTADO[precio.estado] }}
+                      </Badge>
+                      <Button
+                        v-if="precio.sePuedeQuitar"
+                        size="xs"
+                        variant="ghost"
+                        @click="abrir({ tipo: 'quitar', plan, precio })"
+                      >
+                        Quitar
+                      </Button>
+                    </span>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            @click="abrir({ tipo: 'precio', plan, esPromocion: false })"
-          >
-            Cambiar precio
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            @click="abrir({ tipo: 'precio', plan, esPromocion: true })"
-          >
-            Cargar promoción
-          </Button>
-          <Button size="sm" variant="ghost" @click="abrir({ tipo: 'renombrar', plan })">
-            Cambiar nombre
-          </Button>
-          <Button
-            v-if="plan.activo"
-            size="sm"
-            variant="ghost"
-            @click="abrir({ tipo: 'baja', plan })"
-          >
-            Dar de baja plan
-          </Button>
-          <Button
-            v-else
-            size="sm"
-            variant="ghost"
-            :disabled="cambiarEstado.isPending.value"
-            @click="
-              hacer(
-                () => cambiarEstado.mutateAsync({ id: plan.id, activo: true }),
-                'El plan se vuelve a ofrecer.',
-              )
-            "
-          >
-            Volver a ofrecer plan
-          </Button>
-        </div>
-
-        <div v-if="plan.precios.length > 0" class="rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead class="w-32 text-right">Precio</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead class="w-28">Desde</TableHead>
-                <TableHead class="w-28">Hasta</TableHead>
-                <TableHead class="w-56">Estado</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-for="precio in plan.precios" :key="precio.id" class="h-11">
-                <TableCell class="text-right tabular-nums">
-                  {{ formatearBs(precio.precioCentavos, { conCentavos: true }) }}
-                </TableCell>
-                <TableCell>
-                  {{
-                    precio.esPromocion
-                      ? (precio.etiqueta ?? 'Promoción')
-                      : 'Precio habitual'
-                  }}
-                </TableCell>
-                <TableCell class="tabular-nums">
-                  {{ formatearFecha(precio.vigenteDesde) }}
-                </TableCell>
-                <TableCell class="tabular-nums">
-                  {{ formatearFecha(precio.vigenteHasta) }}
-                </TableCell>
-                <TableCell>
-                  <span class="flex flex-wrap items-center gap-2">
-                    <Badge
-                      :variant="precio.estado === 'vigente' ? 'secondary' : 'outline'"
-                    >
-                      {{ ESTADO[precio.estado] }}
-                    </Badge>
-                    <Button
-                      v-if="precio.sePuedeQuitar"
-                      size="xs"
-                      variant="ghost"
-                      @click="abrir({ tipo: 'quitar', plan, precio })"
-                    >
-                      Quitar
-                    </Button>
-                  </span>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-      </section>
+        </section>
+      </div>
     </template>
 
     <div v-else-if="mostrarEsqueleto" class="space-y-4" aria-hidden="true">

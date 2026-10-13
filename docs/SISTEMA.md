@@ -34,7 +34,7 @@ Con el sistema encendido, en el navegador de la PC de recepción:
 
 | Dirección | Qué es |
 |---|---|
-| `http://localhost:3000` | El sistema (abre en Clientes) |
+| `http://localhost:3000` | El sistema (abre en Inicio) |
 | `http://localhost:3000/checkin` | La pantalla de ingreso |
 
 ### Ingresar
@@ -43,7 +43,11 @@ Lo primero que aparece es la pantalla de ingreso: **usuario y contraseña**.
 Cada persona tiene su propio usuario; no se comparten.
 
 - El usuario no distingue mayúsculas de minúsculas.
-- Tras 5 intentos fallidos seguidos hay que esperar un minuto.
+- Tras 5 intentos fallidos seguidos hay que esperar un minuto. La espera es
+  para el equipo desde el que se falló: si alguien se equivoca desde otro
+  lado, la PC de recepción puede seguir entrando.
+- Si desde un mismo equipo se prueba entrar más de 20 veces en un minuto, el
+  sistema pide esperar, sea cual sea el usuario.
 - **La sesión se cierra sola después de 8 horas sin uso.** Al volver, pide la
   contraseña y deja a la persona donde estaba.
 - **Cerrar sesión:** abajo en el menú, donde también se ve quién está usando
@@ -55,6 +59,27 @@ Cada persona tiene su propio usuario; no se comparten.
   se cierra la sesión y hay que entrar con la nueva.
 
 En el menú aparecen solo las secciones a las que cada uno tiene acceso.
+
+**En el celular** el menú no está a la vista: arriba se ve en qué pantalla se
+está y, a la derecha, el botón **Menú**, que abre todas las secciones, "Mi
+cuenta", el modo claro u oscuro y "Cerrar sesión". Se cierra solo al elegir
+una sección, o tocando fuera.
+
+### Inicio
+
+Es lo primero que se ve al entrar: lo de hoy y lo que más se hace.
+
+- **Accesos directos:** Registrar cliente, Abrir check-in, Registrar visita.
+- **Cobrado hoy:** el total y cuánto por cada forma de pago. Al hacer clic
+  lleva a Pagos.
+- **Vencen en estos días** y **Vencidas:** cuántos clientes hay en cada
+  situación. Al hacer clic se abre la lista ya filtrada.
+- **Socios activos** y **Entraron hoy:** solo los ve el dueño.
+- **Lista de los que vencen en estos días**, con su teléfono y el botón
+  **Renovar**, que lleva directo a la venta. Si no vence nadie, lo dice.
+
+Cada uno ve solo los bloques de lo que tiene acceso. Quien solo usa el
+check-in no pasa por Inicio: entra directo al check-in.
 
 ### Modo claro y modo oscuro
 
@@ -102,6 +127,22 @@ compró. Un eventual pasa a ser socio en el momento en que compra su primer plan
 
 ### 4.1 Lista de clientes
 
+**Cómo está cada uno, sin abrir la ficha.** La columna "Membresía" dice, al
+lado de cada nombre:
+
+| Se ve | Qué significa |
+|---|---|
+| ✓ Al día · hasta el 08/11/2026 | Tiene pago y le quedan más de 3 días |
+| ⚠ Vence hoy / Vence mañana / Vence en 3 días | Está al día, pero conviene ofrecerle renovar |
+| ✕ Vencida · hace 5 días | Ya no puede entrar |
+| Sin membresía | Nunca compró nada |
+| ✓ Pase válido hoy | Pagó una sesión y vale hoy |
+| Empieza el 20/10/2026 | Ya pagó, pero todavía no arranca |
+
+El filtro **Membresía** deja ver solo los que están al día, los que vencen
+en estos días, los vencidos o los que no tienen ninguna. Sirve, por ejemplo,
+para llamar a los que vencen esta semana.
+
 Menú **Clientes**. Muestra a todos, del más nuevo al más viejo, de a 25.
 
 - **Buscar:** por nombre, apellido, CI o número de socio. Busca solo mientras
@@ -132,6 +173,14 @@ Botón **Registrar cliente**.
 Al guardar se abre la ficha del cliente nuevo, con su número de socio.
 
 ### 4.3 Ficha del cliente
+
+Además de sus datos, la ficha muestra **cuándo vino por última vez** ("Ayer",
+"Hace 5 días", "Todavía no entró nunca") y **cuántos días vino en el último
+mes**. Cuentan solo las veces que pasó: si lo rebotaron en la puerta, no.
+
+Cuando la membresía está por vencer o ya venció, el recuadro de "Membresía"
+se destaca y lo dice con todas las letras: "Vence el 13/10/2026. Le queda
+1 día. Conviene ofrecerle renovar."
 
 Muestra el nombre, si es socio o eventual, sus datos y su membresía.
 
@@ -209,7 +258,13 @@ Lo decide el sistema, y lo explica en el resumen:
 - **Pase por sesión:** vale hoy, siempre, aunque tenga un plan vigente.
 - **Pase hoy y plan el mismo día:** el plan empieza mañana.
 
-**Elegir otra fecha de inicio:** casilla opcional ("arranca el lunes"). Solo
+**El plan viene elegido al renovar.** Si el cliente ya tuvo un plan, ese
+mismo aparece marcado ("Es el plan que ya tenía"); se cambia con un clic. Los
+planes van primero y el pase por sesión al final. El botón dice cuánto se va
+a cobrar: "Cobrar Bs 200 y registrar".
+
+**Elegir otra fecha de inicio:** casilla opcional ("arranca el lunes"), hasta
+un año hacia adelante. Solo
 de hoy en adelante, y no para pases. Mientras no llegue esa fecha, la persona
 no puede entrar.
 
@@ -417,7 +472,9 @@ usuarios y accesos.
 ### 10.2 Crear un usuario
 
 Botón **Crear usuario**: nombre y apellido, usuario (sin espacios, por ejemplo
-`ana.quispe`) y una contraseña de 8 caracteres o más.
+`ana.quispe`) y una contraseña de 8 caracteres o más. El sistema rechaza las
+que probaría cualquiera primero ("12345678", "password123", una sola letra
+repetida) y pide elegir otra.
 
 Las casillas vienen con lo básico de recepción ya marcado. Se agrega o se
 quita lo que haga falta. **Dejar lo básico de recepción** vuelve al punto de

@@ -8,6 +8,39 @@ import { ReglaDeNegocioError } from '@/lib/errors';
 const LARGO_MINIMO_PASSWORD = 8;
 const LARGO_MAXIMO_PASSWORD = 200;
 
+/**
+ * Las que prueba primero cualquiera que quiera entrar. No es una lista
+ * completa ni pretende serlo: ataja el descuido, no reemplaza una buena clave.
+ */
+const DEMASIADO_COMUNES = new Set([
+  '12345678',
+  '123456789',
+  '1234567890',
+  '87654321',
+  '11223344',
+  '12341234',
+  'password',
+  'password1',
+  'password123',
+  'contraseña',
+  'contrasena',
+  'qwertyui',
+  'qwerty123',
+  'asdfghjk',
+  'abcd1234',
+  'abc12345',
+  'admin123',
+  'administrador',
+  'gimnasio',
+  'gimnasio1',
+  'gimnasio123',
+  'recepcion',
+  'recepcion1',
+  'bolivia123',
+  'iloveyou',
+  'bienvenido',
+]);
+
 /** Tantos intentos fallidos seguidos y la cuenta descansa un rato. */
 export const INTENTOS_ANTES_DE_BLOQUEAR = 5;
 export const SEGUNDOS_DE_BLOQUEO = 60;
@@ -47,6 +80,13 @@ export function validarPassword(password: string): string {
     throw new ReglaDeNegocioError('La contraseña es demasiado larga', {
       campo: 'password',
     });
+  }
+  const unSoloCaracter = new Set(password).size === 1;
+  if (unSoloCaracter || DEMASIADO_COMUNES.has(password.toLowerCase())) {
+    throw new ReglaDeNegocioError(
+      'Esa contraseña es de las primeras que probaría cualquiera. Elegí otra.',
+      { campo: 'password' },
+    );
   }
   return password;
 }

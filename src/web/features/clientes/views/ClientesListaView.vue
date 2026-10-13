@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * Listado de clientes: búsqueda, filtro socio/eventual y paginación.
+ * Listado de clientes: búsqueda, filtros, cómo está la membresía de cada uno
+ * y paginación.
  *
  * Los filtros viven en la URL (`?texto=&tipo=&pagina=`): volver atrás desde
  * una ficha deja la lista exactamente donde estaba, y un enlace se puede
@@ -10,9 +11,11 @@ import { Plus, Search } from '@lucide/vue';
 import { refDebounced } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { useCoberturas } from '@/web/features/membresias/api/membresias.api';
+import EstadoDeMembresia from '@/web/features/membresias/components/EstadoDeMembresia.vue';
 import { useAccesos } from '@/web/features/sesion/api/sesion.api';
 import ErrorDeCarga from '@/web/shared/components/ErrorDeCarga.vue';
-import { formatearCi, formatearFecha, plural } from '@/web/shared/lib/formato';
+import { formatearCi, plural } from '@/web/shared/lib/formato';
 import { Button } from '@/web/shared/ui/button';
 import { Input } from '@/web/shared/ui/input';
 import { Label } from '@/web/shared/ui/label';
@@ -54,12 +57,24 @@ const deLaUrl = (valor: unknown) => (typeof valor === 'string' ? valor : '');
 const esTipo = (valor: unknown): valor is NonNullable<FiltrosLista['tipo']> =>
   valor === 'socio' || valor === 'eventual';
 
+const MEMBRESIAS = {
+  al_dia: 'Al día',
+  por_vencer: 'Por vencer',
+  vencida: 'Vencida',
+  sin_membresia: 'Sin membresía',
+} as const;
+
+const esMembresia = (valor: unknown): valor is keyof typeof MEMBRESIAS =>
+  typeof valor === 'string' && valor in MEMBRESIAS;
+
 const filtros = computed(() => {
   const tipo = deLaUrl(route.query.tipo);
+  const membresia = deLaUrl(route.query.membresia);
   const pagina = Number(deLaUrl(route.query.pagina));
   return {
     texto: deLaUrl(route.query.texto),
     tipo: esTipo(tipo) ? tipo : undefined,
+    membresia: esMembresia(membresia) ? membresia : undefined,
     // Los dados de baja los ve quien tiene el acceso para reactivarlos.
     estado: route.query.estado === 'baja' ? ('baja' as const) : undefined,
     pagina: Number.isInteger(pagina) && pagina > 0 ? pagina : 1,
@@ -71,14 +86,28 @@ const hayFiltros = computed(
   () =>
     filtros.value.texto !== '' ||
     filtros.value.tipo !== undefined ||
+    filtros.value.membresia !== undefined ||
     filtros.value.estado !== undefined,
 );
 
 const { data, error, isPending, isFetching, isPlaceholderData, refetch } =
   useListaClientes(filtros);
 
+// Cómo está la membresía de los que se ven: una sola consulta por página.
+const idsALaVista = computed(() => data.value?.clientes.map((c) => c.id) ?? []);
+const { data: coberturas } = useCoberturas(idsALaVista);
+const coberturaDe = computed(
+  () => new Map(coberturas.value?.coberturas.map((c) => [c.clienteId, c]) ?? []),
+);
+
 function irA(
-  cambios: { texto?: string; tipo?: string; estado?: string; pagina?: number },
+  cambios: {
+    texto?: string;
+    tipo?: string;
+    membresia?: string;
+    estado?: string;
+    pagina?: number;
+  },
   modo: 'push' | 'replace',
 ) {
   const nuevo = { ...filtros.value, ...cambios };
@@ -86,6 +115,7 @@ function irA(
     query: {
       texto: nuevo.texto || undefined,
       tipo: esTipo(nuevo.tipo) ? nuevo.tipo : undefined,
+      membresia: esMembresia(nuevo.membresia) ? nuevo.membresia : undefined,
       estado: nuevo.estado === 'baja' ? 'baja' : undefined,
       pagina: nuevo.pagina > 1 ? String(nuevo.pagina) : undefined,
     },
@@ -113,7 +143,10 @@ watch(
 
 function quitarFiltros() {
   textoBusqueda.value = '';
-  irA({ texto: '', tipo: undefined, estado: undefined, pagina: 1 }, 'push');
+  irA(
+    { texto: '', tipo: undefined, membresia: undefined, estado: undefined, pagina: 1 },
+    'push',
+  );
 }
 
 // El esqueleto aparece solo si la carga tarda: contra localhost casi nunca, y
@@ -134,6 +167,8 @@ const descripcionFiltros = computed(() => {
   if (filtros.value.texto) partes.push(`“${filtros.value.texto}”`);
   if (filtros.value.tipo)
     partes.push(filtros.value.tipo === 'socio' ? 'socios' : 'eventuales');
+  if (filtros.value.membresia)
+    partes.push(`membresía: ${MEMBRESIAS[filtros.value.membresia].toLowerCase()}`);
   return partes.join(' en ');
 });
 </script>
@@ -190,6 +225,24 @@ const descripcionFiltros = computed(() => {
         </Select>
       </div>
 
+      <div class="space-y-1.5">
+        <Label for="filtro-membresia">Membresía</Label>
+        <Select
+          :model-value="filtros.membresia ?? 'todas'"
+          @update:model-value="irA({ membresia: String($event), pagina: 1 }, 'push')"
+        >
+          <SelectTrigger id="filtro-membresia" class="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas</SelectItem>
+            <SelectItem v-for="(nombre, clave) in MEMBRESIAS" :key="clave" :value="clave">
+              {{ nombre }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div v-if="puede('clientes.baja')" class="space-y-1.5">
         <Label for="filtro-estado">Estado</Label>
         <Select
@@ -229,12 +282,12 @@ const descripcionFiltros = computed(() => {
         <Table class="table-fixed">
           <TableHeader class="bg-background sticky top-0">
             <TableRow>
-              <TableHead class="w-16 text-right sm:w-24">Nº</TableHead>
+              <TableHead class="w-14 text-right sm:w-24">Nº</TableHead>
               <TableHead>Nombre</TableHead>
               <TableHead class="hidden w-36 sm:table-cell">CI</TableHead>
-              <TableHead class="hidden w-32 lg:table-cell">Teléfono</TableHead>
-              <TableHead class="w-28 sm:w-44">Tipo</TableHead>
-              <TableHead class="hidden w-32 md:table-cell">Registro</TableHead>
+              <TableHead class="hidden w-32 xl:table-cell">Teléfono</TableHead>
+              <TableHead class="hidden w-36 md:table-cell">Tipo</TableHead>
+              <TableHead class="w-40 sm:w-60">Membresía</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -245,13 +298,13 @@ const descripcionFiltros = computed(() => {
               <TableCell class="hidden sm:table-cell">
                 <Skeleton class="h-4 w-24" />
               </TableCell>
-              <TableCell class="hidden lg:table-cell"
-                ><Skeleton class="h-4 w-20"
-              /></TableCell>
-              <TableCell><Skeleton class="h-5 w-16 rounded-full" /></TableCell>
-              <TableCell class="hidden md:table-cell"
-                ><Skeleton class="h-4 w-20"
-              /></TableCell>
+              <TableCell class="hidden xl:table-cell">
+                <Skeleton class="h-4 w-20" />
+              </TableCell>
+              <TableCell class="hidden md:table-cell">
+                <Skeleton class="h-5 w-16 rounded-full" />
+              </TableCell>
+              <TableCell><Skeleton class="h-4 w-28" /></TableCell>
             </TableRow>
           </TableBody>
 
@@ -277,12 +330,18 @@ const descripcionFiltros = computed(() => {
               <TableCell class="hidden tabular-nums sm:table-cell">
                 {{ formatearCi(cliente.ci, cliente.ciExtension) }}
               </TableCell>
-              <TableCell class="hidden tabular-nums lg:table-cell">
+              <TableCell class="hidden tabular-nums xl:table-cell">
                 {{ cliente.telefono ?? '—' }}
               </TableCell>
-              <TableCell><ClienteEtiquetas :cliente="cliente" /></TableCell>
-              <TableCell class="hidden tabular-nums md:table-cell">
-                {{ formatearFecha(cliente.fechaRegistro) }}
+              <TableCell class="hidden md:table-cell">
+                <ClienteEtiquetas :cliente="cliente" />
+              </TableCell>
+              <TableCell>
+                <!-- Llega un instante después que la lista: el lugar ya está reservado. -->
+                <EstadoDeMembresia
+                  v-if="coberturaDe.get(cliente.id)"
+                  :cobertura="coberturaDe.get(cliente.id)!"
+                />
               </TableCell>
             </TableRow>
           </TableBody>

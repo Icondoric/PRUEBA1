@@ -28,11 +28,12 @@ declare module 'vue-router' {
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    // A dónde va cada uno al entrar lo decide el guard, según sus accesos.
+    // El resumen del día. Quien solo tiene el check-in va derecho ahí (lo
+    // decide el guard).
     {
       path: '/',
       name: 'inicio',
-      component: () => import('@/web/shared/layout/SinAccesoView.vue'),
+      component: () => import('@/web/features/inicio/views/InicioView.vue'),
       meta: { titulo: 'Inicio' },
     },
     {
@@ -182,8 +183,11 @@ router.beforeEach(async (a) => {
   }
 
   if (a.name === 'inicio') {
-    const primera = seccionesDe(usuario)[0];
-    return primera ? { name: primera.ruta } : { name: 'sin-acceso' };
+    const secciones = seccionesDe(usuario);
+    if (secciones.length === 0) return { name: 'sin-acceso' };
+    // La cuenta del kiosco (solo check-in) no tiene nada que resumir.
+    if (secciones.every((s) => s.ruta === 'checkin')) return { name: 'checkin' };
+    return true;
   }
 
   if (!tieneAcceso(usuario, a.meta)) return { name: 'sin-acceso' };

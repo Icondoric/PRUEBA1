@@ -5,15 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark light" />
     <title>Gimnasio</title>
-    <!-- Antes de pintar, para que no parpadee: oscuro salvo que se haya elegido
-         claro. La clave es la de src/web/shared/lib/tema.ts. -->
-    <script>
-      try {
-        if (localStorage.getItem('gym-tema') === 'claro') {
-          document.documentElement.classList.remove('dark');
-        }
-      } catch {}
-    </script>
+    <!-- Pone el modo (claro u oscuro) antes de pintar, para que no parpadee. -->
+    <script src="/tema-inicial.js"></script>
   </head>
   <body>
     <div id="app"></div>

@@ -6,8 +6,8 @@ import { z } from 'zod';
 import { METODOS } from '../domain/pago';
 
 export const listarPagosQuerySchema = z.object({
-  desde: z.string().optional(),
-  hasta: z.string().optional(),
+  desde: z.string().max(10).optional(),
+  hasta: z.string().max(10).optional(),
   metodo: z.enum(METODOS).optional(),
 });
 

@@ -9,12 +9,14 @@ import { z } from 'zod';
 
 const centavos = z
   .number({ error: 'Escribí el precio' })
-  .int('El precio no puede tener fracciones de centavo');
+  .int('El precio no puede tener fracciones de centavo')
+  .max(100_000_000, 'Ese precio es demasiado alto: revisá los ceros');
 
 export const planNuevoSchema = z.object({
   nombre: z
     .string({ error: 'El nombre es obligatorio' })
-    .min(1, 'El nombre es obligatorio'),
+    .min(1, 'El nombre es obligatorio')
+    .max(60, 'No puede pasar de 60 caracteres'),
   diasDuracion: z.coerce.number({ error: 'Escribí cuántos días dura' }).int(),
   esPaseDiario: z.boolean(),
   precioCentavos: centavos,
@@ -23,7 +25,8 @@ export const planNuevoSchema = z.object({
 export const nombreDePlanSchema = z.object({
   nombre: z
     .string({ error: 'El nombre es obligatorio' })
-    .min(1, 'El nombre es obligatorio'),
+    .min(1, 'El nombre es obligatorio')
+    .max(60, 'No puede pasar de 60 caracteres'),
 });
 
 export const estadoDePlanSchema = z.object({
@@ -32,8 +35,8 @@ export const estadoDePlanSchema = z.object({
 
 export const precioInputSchema = z.object({
   precioCentavos: centavos,
-  vigenteDesde: z.string({ error: 'Indicá desde qué fecha rige' }),
-  vigenteHasta: z.string().optional().nullable(),
+  vigenteDesde: z.string({ error: 'Indicá desde qué fecha rige' }).max(10),
+  vigenteHasta: z.string().max(10).optional().nullable(),
   esPromocion: z.boolean(),
   etiqueta: z.string().max(60).optional().nullable(),
 });

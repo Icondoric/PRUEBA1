@@ -10,7 +10,12 @@ import type { Context } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { hoyEnZona } from '@/lib/fechas';
 import type { ServicioMembresias } from '../application/membresias.service';
-import { cotizacionQuerySchema, historialQuerySchema, ventaInputSchema } from './schemas';
+import {
+  coberturasQuerySchema,
+  cotizacionQuerySchema,
+  historialQuerySchema,
+  ventaInputSchema,
+} from './schemas';
 
 export function rutasPlanes(servicio: ServicioMembresias) {
   return new Hono().get('/', (c) => c.json(servicio.planesConPrecio(hoyEnZona())));
@@ -28,6 +33,9 @@ export function rutasMembresias(
       c.json(servicio.historial(c.req.valid('query').clienteId, hoyEnZona())),
     )
 
+    .get('/coberturas', zValidator('query', coberturasQuerySchema), (c) =>
+      c.json(servicio.coberturas(c.req.valid('query').clienteIds, hoyEnZona())),
+    )
     .get('/cotizacion', zValidator('query', cotizacionQuerySchema), (c) =>
       c.json(servicio.cotizar(c.req.valid('query'), hoyEnZona())),
     )

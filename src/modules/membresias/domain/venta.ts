@@ -11,9 +11,16 @@
  */
 
 import { ReglaDeNegocioError } from '@/lib/errors';
-import { type FechaISO, esAnterior, esFechaISO } from '@/lib/fechas';
+import { type FechaISO, diasEntre, esAnterior, esFechaISO } from '@/lib/fechas';
 import { type PrecioResuelto, type PrecioVigencia, resolverPrecio } from './precios';
 import { type PeriodoMembresia, calcularPeriodo } from './renovacion';
+
+/**
+ * Cuánto se puede adelantar el inicio. "Arranca el lunes" es normal; un año
+ * entero ya es un error de tipeo, y una fecha lejanísima dejaría al cliente
+ * con una membresía que tapa todas las renovaciones que vengan después.
+ */
+export const DIAS_MAXIMOS_DE_ANTICIPO = 365;
 
 export interface PlanParaVenta {
   id: number;
@@ -65,6 +72,12 @@ export function cotizarVenta(entrada: EntradaCotizacion): Cotizacion {
       throw new ReglaDeNegocioError('La fecha de inicio no puede ser anterior a hoy', {
         campo: 'inicio',
       });
+    }
+    if (diasEntre(hoy, inicioForzado) > DIAS_MAXIMOS_DE_ANTICIPO) {
+      throw new ReglaDeNegocioError(
+        'La fecha de inicio no puede ser más de un año después de hoy',
+        { campo: 'inicio' },
+      );
     }
   }
 

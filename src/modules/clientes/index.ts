@@ -29,7 +29,9 @@ const SIN_SESION: DepsDeClientes = {
  *   puede. Los scripts usan solo el servicio y no lo pasan.
  */
 export function moduloClientes(db: DB, deps: DepsDeClientes = SIN_SESION) {
-  const servicio = crearServicioClientes(crearRepoClientes(db));
+  const servicio = crearServicioClientes(crearRepoClientes(db), {
+    diasDeAviso: deps.diasDeAviso,
+  });
   return { servicio, rutas: rutasClientes(servicio, deps) };
 }
 

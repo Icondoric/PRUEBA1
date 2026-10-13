@@ -49,10 +49,14 @@ const REGLAS: ReadonlyArray<readonly [Metodo, RegExp, Acceso]> = [
   ['*', /^\/api\/gestion-planes(\/.*)?$/, ['planes.gestionar']],
   ['GET', /^\/api\/membresias$/, ['clientes.gestionar', 'membresias.vender']],
   ['GET', /^\/api\/membresias\/cotizacion$/, ['membresias.vender']],
+  // Cómo está la membresía de los clientes de una lista: lo ve quien ve la lista.
+  ['GET', /^\/api\/membresias\/coberturas$/, ['clientes.gestionar', 'membresias.vender', 'checkin.pases', 'pagos.caja_hoy']],
   ['POST', /^\/api\/membresias$/, ['membresias.vender']],
 
   // mostrador
   ['POST', /^\/api\/checkin$/, ['checkin.usar']],
+  // Cuándo vino por última vez: es parte de la ficha.
+  ['GET', /^\/api\/checkin\/asistencia$/, ['clientes.gestionar', 'membresias.vender']],
   ['*', /^\/api\/checkin\/pase$/, ['checkin.pases']],
 
   // pagos. Ver otras fechas se controla además adentro (pagos.service).

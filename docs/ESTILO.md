@@ -190,6 +190,30 @@ solo.
 Las barras usan el token `grafico`: ámbar-700 en claro (4,40 sobre `muted`) y
 ámbar-500 en oscuro. El número va siempre escrito al lado.
 
+## Anchos: del celular a la pantalla grande
+
+Toda pantalla tiene que servir en un celular y aprovechar un monitor grande.
+Se revisa en cinco anchos: **390, 768, 1024, 1440 y 1920 px**.
+
+- **Nunca se desliza la página de costado**, y una tabla tampoco. Lo que no
+  entra como columna en angosto se muestra en una segunda línea, debajo del
+  dato principal de la fila (la fecha y el método debajo del cliente, por
+  ejemplo). No se esconde información: se reacomoda.
+- **El menú lateral aparece desde 1024 px.** Por debajo es una barra arriba
+  con el botón "Menú". A 768 px una columna lateral le quita al contenido
+  más de la mitad del ancho.
+- **En pantalla grande se usan dos columnas, no renglones más largos.** Un
+  texto o un formulario estirado a 1600 px se lee peor. Lo que se reparte
+  es el contenido: datos a la izquierda e historial a la derecha (ficha),
+  lo que se elige y lo que se cobra (venta), formulario y listado
+  (visitas), secciones en dos columnas (reportes, planes).
+- **Un formulario corto no se estira** (Mi cuenta, registrar cliente).
+  Queda angosto a propósito.
+- **El orden en angosto es el orden de importancia.** Al pasar a dos
+  columnas se reubica con la grilla, sin cambiar el orden en el código, para
+  que el teclado y el lector de pantalla sigan el mismo recorrido.
+- Controles táctiles de 40 px o más.
+
 ## Rendimiento
 
 La PC de recepción puede ser modesta. El desenfoque (`backdrop-filter`) va a lo

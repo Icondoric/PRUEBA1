@@ -26,6 +26,7 @@ export function moduloCheckin(
 }
 
 export type {
+  AsistenciaDeCliente,
   PaseEnVenta,
   PaseVendido,
   ResultadoCheckin,

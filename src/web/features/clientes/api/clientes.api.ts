@@ -30,6 +30,8 @@ export interface FiltrosLista {
   tipo?: 'socio' | 'eventual';
   /** 'baja' = los dados de baja. Pide el acceso "Dar de baja y reactivar". */
   estado?: 'activos' | 'baja';
+  /** Cómo está su membresía hoy. */
+  membresia?: 'al_dia' | 'por_vencer' | 'vencida' | 'sin_membresia';
   pagina?: number;
   porPagina?: number;
 }
@@ -54,6 +56,7 @@ export function useListaClientes(filtros: MaybeRefOrGetter<FiltrosLista>) {
             texto: query.value.texto || undefined,
             tipo: query.value.tipo,
             estado: query.value.estado === 'baja' ? 'baja' : undefined,
+            membresia: query.value.membresia,
             pagina: String(query.value.pagina ?? 1),
             porPagina: String(query.value.porPagina ?? 25),
           },

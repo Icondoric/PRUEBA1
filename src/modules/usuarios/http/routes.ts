@@ -33,6 +33,8 @@ export interface DepsDeRutas {
   usuarioActual: (c: Context) => UsuarioSesion;
   /** La hora real. Inyectable para los tests. */
   ahora: () => Date;
+  /** Desde qué equipo llega el pedido, para contar los intentos de ingreso. */
+  equipoDe?: (c: Context) => string;
 }
 
 export function rutasSesion(servicio: ServicioUsuarios, deps: DepsDeRutas) {
@@ -41,6 +43,7 @@ export function rutasSesion(servicio: ServicioUsuarios, deps: DepsDeRutas) {
       const { token, usuario } = servicio.iniciarSesion(
         c.req.valid('json'),
         deps.ahora(),
+        deps.equipoDe?.(c),
       );
 
       setCookie(c, COOKIE_SESION, token, {
@@ -48,6 +51,10 @@ export function rutasSesion(servicio: ServicioUsuarios, deps: DepsDeRutas) {
         httpOnly: true,
         // No viaja en pedidos que vengan de otro sitio.
         sameSite: 'Strict',
+        // Si se entra por HTTPS (un túnel delante), que no viaje nunca en claro.
+        secure:
+          new URL(c.req.url).protocol === 'https:' ||
+          c.req.header('x-forwarded-proto') === 'https',
         path: '/',
         maxAge: SEGUNDOS_DE_COOKIE,
       });

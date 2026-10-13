@@ -10,12 +10,15 @@
  */
 
 import { ReglaDeNegocioError } from '@/lib/errors';
-import type { FechaISO } from '@/lib/fechas';
+import { type FechaISO, diasEntre, sumarDias } from '@/lib/fechas';
 import type { ClienteVista, ServicioClientes } from '@/modules/clientes';
 import type { ServicioMembresias } from '@/modules/membresias';
 import { evaluarAcceso } from '../domain/acceso';
 import { vigenciaParaAcceso } from '../domain/vigencia';
 import type { RepoCheckin } from '../infrastructure/checkin.repo';
+
+/** La ventana de "viene seguido": el último mes. */
+const DIAS_DE_ASISTENCIA = 30;
 
 export interface EntradaPase {
   /** Si ya es cliente. Si no viene, se crea uno con `nombre`. */
@@ -104,6 +107,22 @@ export function crearServicioCheckin(
       return ingresar(cliente, hoy);
     },
 
+    /** Cuándo vino por última vez y cuánto viene. Para la ficha del cliente. */
+    asistencia(clienteId: number, hoy: FechaISO) {
+      clientes.obtener(clienteId); // 404 si no existe
+      const { ultimo, dias } = repo.asistenciaDe(
+        clienteId,
+        sumarDias(hoy, -(DIAS_DE_ASISTENCIA - 1)),
+      );
+      return {
+        ultimoIngreso: ultimo,
+        /** Hace cuántos días fue. 0 = hoy. null si nunca entró. */
+        haceDias: ultimo === null ? null : diasEntre(ultimo, hoy),
+        diasQueVino: dias,
+        enDias: DIAS_DE_ASISTENCIA,
+      };
+    },
+
     /** Qué pase se vende hoy y a cuánto. null si no hay ninguno configurado. */
     pasePorSesion,
 
@@ -155,3 +174,4 @@ export type ServicioCheckin = ReturnType<typeof crearServicioCheckin>;
 export type ResultadoCheckin = ReturnType<ServicioCheckin['registrar']>;
 export type PaseVendido = ReturnType<ServicioCheckin['venderPase']>;
 export type PaseEnVenta = ReturnType<ServicioCheckin['pasePorSesion']>;
+export type AsistenciaDeCliente = ReturnType<ServicioCheckin['asistencia']>;

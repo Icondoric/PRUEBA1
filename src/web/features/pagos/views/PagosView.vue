@@ -85,14 +85,14 @@ const periodo = computed(() => {
   <div class="space-y-5">
     <h1 tabindex="-1" class="titulo-pantalla">Pagos</h1>
 
-    <form class="flex flex-wrap items-end gap-3" @submit.prevent>
+    <form class="grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap" @submit.prevent>
       <!-- Otras fechas: solo quien tiene ese acceso. El resto ve el día de hoy. -->
       <div v-if="puede('pagos.otras_fechas')" class="space-y-1.5">
         <Label for="pagos-desde">Desde</Label>
         <Input
           id="pagos-desde"
           type="date"
-          class="w-44"
+          class="w-full sm:w-44"
           :model-value="filtros.desde || data?.desde || ''"
           :max="data?.hoy"
           @update:model-value="irA({ desde: String($event) })"
@@ -103,7 +103,7 @@ const periodo = computed(() => {
         <Input
           id="pagos-hasta"
           type="date"
-          class="w-44"
+          class="w-full sm:w-44"
           :model-value="filtros.hasta || data?.hasta || ''"
           :max="data?.hoy"
           @update:model-value="irA({ hasta: String($event) })"
@@ -115,7 +115,7 @@ const periodo = computed(() => {
           :model-value="filtros.metodo ?? 'todos'"
           @update:model-value="irA({ metodo: String($event) })"
         >
-          <SelectTrigger id="pagos-metodo" class="w-44">
+          <SelectTrigger id="pagos-metodo" class="w-full sm:w-44">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -159,9 +159,9 @@ const periodo = computed(() => {
           <h2 id="titulo-caja" class="titulo-seccion">Cobrado {{ periodo }}</h2>
 
           <dl class="grid grid-cols-2 gap-3 md:grid-cols-5">
-            <div class="bg-muted/50 space-y-1 rounded-lg border p-4">
+            <div class="bg-card col-span-2 space-y-1 rounded-xl border p-4 md:col-span-1">
               <dt class="text-muted-foreground text-sm">Total</dt>
-              <dd class="text-xl font-semibold tabular-nums">
+              <dd class="text-2xl font-bold tracking-tight tabular-nums">
                 {{ formatearBs(data.totales.totalCentavos) }}
               </dd>
               <dd class="text-muted-foreground text-xs">
@@ -171,7 +171,7 @@ const periodo = computed(() => {
             <div
               v-for="total in data.totales.porMetodo"
               :key="total.metodo"
-              class="space-y-1 rounded-lg border p-4"
+              class="bg-card space-y-1 rounded-xl border p-4"
             >
               <dt class="text-muted-foreground text-sm">
                 {{ NOMBRE_METODO[total.metodo] }}

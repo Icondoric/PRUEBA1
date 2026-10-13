@@ -93,3 +93,18 @@ export function coberturaDelCliente(
 
   return { ...base, situacion: 'futura', desde: proxima, esPaseDiario: false };
 }
+
+/**
+ * ¿Hay que avisarle que renueve? Está al día, pero le quedan pocos días.
+ *
+ * Un pase por sesión no cuenta: vence hoy por definición, y avisar que renueve
+ * un pase diario es ruido.
+ */
+export function estaPorVencer(cobertura: Cobertura, diasDeAviso: number): boolean {
+  return (
+    cobertura.situacion === 'vigente' &&
+    !cobertura.esPaseDiario &&
+    cobertura.dias !== null &&
+    cobertura.dias <= diasDeAviso
+  );
+}

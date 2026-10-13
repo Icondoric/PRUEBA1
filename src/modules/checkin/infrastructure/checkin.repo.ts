@@ -5,7 +5,7 @@
  * e inserción en `ingresos`). Es lo que tiene que responder en menos de 100ms.
  */
 
-import { and, eq, ne } from 'drizzle-orm';
+import { and, countDistinct, eq, gte, inArray, max, ne } from 'drizzle-orm';
 import type { DB } from '@/lib/db';
 import { ingresos, membresias, planes } from '@/lib/db/schema';
 
@@ -28,6 +28,30 @@ export function crearRepoCheckin(db: DB) {
           and(eq(membresias.clienteId, clienteId), ne(membresias.estado, 'cancelada')),
         )
         .all();
+    },
+
+    /**
+     * Cuándo entró por última vez, y cuántos días distintos vino desde `desde`.
+     * Cuentan solo las veces que pasó: un rechazo en la puerta no es una visita.
+     */
+    asistenciaDe(clienteId: number, desde: string) {
+      const pasaron = and(
+        eq(ingresos.clienteId, clienteId),
+        inArray(ingresos.resultado, ['permitido', 'por_vencer']),
+      );
+      const ultimo =
+        db
+          .select({ fecha: max(ingresos.fecha) })
+          .from(ingresos)
+          .where(pasaron)
+          .get()?.fecha ?? null;
+      const dias =
+        db
+          .select({ n: countDistinct(ingresos.fecha) })
+          .from(ingresos)
+          .where(and(pasaron, gte(ingresos.fecha, desde)))
+          .get()?.n ?? 0;
+      return { ultimo, dias };
     },
 
     registrarIngreso(datos: {

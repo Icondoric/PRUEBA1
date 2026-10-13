@@ -6,5 +6,5 @@ import { z } from 'zod';
 
 export const reporteQuerySchema = z.object({
   /** 'YYYY-MM'. Que sea un mes válido y del período lo decide el dominio. */
-  mes: z.string().optional(),
+  mes: z.string().max(7).optional(),
 });

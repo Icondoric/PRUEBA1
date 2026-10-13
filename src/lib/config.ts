@@ -25,15 +25,24 @@ export function puerto(): number {
 }
 
 /**
- * Interfaz de red donde escucha el servidor.
+ * Direcciones de red donde escucha el servidor. Una, o varias separadas por
+ * coma.
  *
  * Default `127.0.0.1`: solo la PC de recepción. Para que el dueño entre por
- * Tailscale hay que arrancar con `HOST=0.0.0.0`; eso también deja el sistema
- * visible en el wifi del gimnasio, protegido solo por el ingreso con usuario
- * y contraseña. Ver docs/INSTALACION.md antes de cambiarlo.
+ * Tailscale, lo seguro es sumar SOLO la dirección de Tailscale de esta PC:
+ * `HOST=127.0.0.1,100.x.y.z`. Así el sistema no queda a la vista en el wifi
+ * del gimnasio.
+ *
+ * `HOST=0.0.0.0` (todas las redes) también funciona, pero deja el sistema
+ * visible para cualquiera conectado al wifi, y el tráfico va sin cifrar.
+ * Ver docs/INSTALACION.md antes de usarlo.
  */
-export function host(): string {
-  return process.env.HOST?.trim() || '127.0.0.1';
+export function hosts(): string[] {
+  const lista = (process.env.HOST ?? '')
+    .split(',')
+    .map((direccion) => direccion.trim())
+    .filter(Boolean);
+  return lista.length > 0 ? [...new Set(lista)] : ['127.0.0.1'];
 }
 
 /** Carpeta local de respaldos. */

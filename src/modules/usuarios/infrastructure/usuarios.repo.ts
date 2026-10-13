@@ -5,7 +5,7 @@
  * apuntando a ellos. Las sesiones sí se borran: no son historia, son llaves.
  */
 
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, lt } from 'drizzle-orm';
 import type { DB } from '@/lib/db';
 import { sesiones, usuarioPermisos, usuarios } from '@/lib/db/schema';
 
@@ -99,6 +99,11 @@ export function crearRepoUsuarios(db: DB) {
 
     borrarSesion(id: number): void {
       db.delete(sesiones).where(eq(sesiones.id, id)).run();
+    },
+
+    /** Las que nadie usa desde antes de `limite` ya vencieron: no sirven a nadie. */
+    borrarSesionesSinUsoDesde(limite: Date): void {
+      db.delete(sesiones).where(lt(sesiones.ultimoUso, limite)).run();
     },
 
     /** Echa al usuario de todos lados: al desactivarlo o cambiarle la contraseña. */

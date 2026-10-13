@@ -34,7 +34,13 @@ import {
   permisosEfectivos,
 } from '../domain/permisos';
 import type { RepoUsuarios, UsuarioFila } from '../infrastructure/usuarios.repo';
-import { hashDeToken, hashearPassword, nuevoToken, passwordCoincide } from './password';
+import {
+  gastarComoVerificacion,
+  hashDeToken,
+  hashearPassword,
+  nuevoToken,
+  passwordCoincide,
+} from './password';
 
 /** Quien está usando el sistema en este pedido. */
 export interface UsuarioSesion {
@@ -51,12 +57,17 @@ const SEGUNDOS_ENTRE_TOQUES = 60;
 
 const CREDENCIALES_INCORRECTAS = 'Usuario o contraseña incorrectos';
 
+/** Tope de nombres con intentos fallidos recordados: no crece sin límite. */
+const FALLIDOS_RECORDADOS = 2_000;
+
 export function crearServicioUsuarios(
   repo: RepoUsuarios,
   config: { horasDeSesion: number },
 ) {
-  // Intentos fallidos por nombre de usuario. En memoria: se reinicia con el
-  // proceso, que es un único proceso en una única PC.
+  // Intentos fallidos por equipo y nombre de usuario. Por equipo, para que
+  // nadie pueda dejar afuera a otro fallando a propósito desde otro lado: el
+  // bloqueo le cae a quien falla. En memoria: se reinicia con el proceso, que
+  // es un único proceso en una única PC.
   const fallidos = new Map<string, IntentosFallidos>();
 
   function aSesion(fila: UsuarioFila): UsuarioSesion {
@@ -99,10 +110,16 @@ export function crearServicioUsuarios(
   return {
     // ── sesión ──────────────────────────────────────────────────────────────
 
-    iniciarSesion(entrada: { usuario: string; password: string }, ahora: Date) {
+    iniciarSesion(
+      entrada: { usuario: string; password: string },
+      ahora: Date,
+      /** Desde qué equipo se intenta. Sin dato, todos cuentan como uno. */
+      equipo = 'local',
+    ) {
       const usuario = normalizarUsuario(entrada.usuario);
+      const clave = `${equipo}\n${usuario}`;
 
-      const espera = segundosDeEspera(fallidos.get(usuario), ahora);
+      const espera = segundosDeEspera(fallidos.get(clave), ahora);
       if (espera > 0) {
         throw new NoAutenticadoError(
           `Demasiados intentos seguidos. Esperá ${espera} segundos y probá de nuevo.`,
@@ -110,28 +127,40 @@ export function crearServicioUsuarios(
       }
 
       const fila = repo.porUsuario(usuario);
-      // El mismo mensaje si el usuario no existe, está desactivado o la
-      // contraseña está mal: no se le dice a un curioso qué cuentas existen.
-      if (
-        !fila ||
-        !fila.activo ||
-        !passwordCoincide(entrada.password, fila.passwordHash)
-      ) {
-        const previos = fallidos.get(usuario);
+      // El mismo mensaje, y el mismo tiempo de respuesta, si el usuario no
+      // existe, está desactivado o la contraseña está mal: no se le dice a un
+      // curioso qué cuentas existen.
+      const coincide =
+        fila?.activo === true && passwordCoincide(entrada.password, fila.passwordHash);
+      if (!fila?.activo) gastarComoVerificacion(entrada.password);
+
+      if (!fila || !coincide) {
+        const previos = fallidos.get(clave);
+        if (!previos && fallidos.size >= FALLIDOS_RECORDADOS) {
+          // Se olvidan primero los que ya cumplieron su espera.
+          for (const [nombre, intentos] of fallidos) {
+            if (segundosDeEspera(intentos, ahora) === 0) fallidos.delete(nombre);
+          }
+        }
         // Si ya había llegado al límite y cumplió la espera, la cuenta vuelve a
         // empezar. Antes del límite los intentos se acumulan.
         const vencido =
           previos !== undefined &&
           previos.cantidad >= INTENTOS_ANTES_DE_BLOQUEAR &&
           segundosDeEspera(previos, ahora) === 0;
-        fallidos.set(usuario, {
+        fallidos.set(clave, {
           cantidad: (previos && !vencido ? previos.cantidad : 0) + 1,
           ultimo: ahora,
         });
         throw new NoAutenticadoError(CREDENCIALES_INCORRECTAS);
       }
 
-      fallidos.delete(usuario);
+      fallidos.delete(clave);
+
+      // De paso se barren las sesiones que ya vencieron: nadie las va a usar.
+      repo.borrarSesionesSinUsoDesde(
+        new Date(ahora.getTime() - config.horasDeSesion * 3_600_000),
+      );
 
       const token = nuevoToken();
       repo.crearSesion({

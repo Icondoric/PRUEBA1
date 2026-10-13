@@ -17,7 +17,7 @@
 
 export abstract class AppError extends Error {
   abstract readonly codigo: string;
-  abstract readonly status: 400 | 401 | 403 | 404 | 409 | 422;
+  abstract readonly status: 400 | 401 | 403 | 404 | 409 | 413 | 422 | 429;
   readonly detalles: Record<string, unknown>;
 
   constructor(mensaje: string, detalles: Record<string, unknown> = {}) {
@@ -72,6 +72,21 @@ export class SinPermisoError extends AppError {
   constructor(mensaje = 'Esta cuenta no puede hacer esta operación') {
     super(mensaje);
   }
+}
+
+/** El pedido trae más datos de los que el sistema acepta. */
+export class DemasiadoGrandeError extends AppError {
+  readonly codigo = 'DEMASIADO_GRANDE';
+  readonly status = 413 as const;
+  constructor(mensaje = 'Eso es demasiado largo para guardarlo') {
+    super(mensaje);
+  }
+}
+
+/** Demasiados intentos seguidos: hay que esperar. */
+export class DemasiadosIntentosError extends AppError {
+  readonly codigo = 'DEMASIADOS_INTENTOS';
+  readonly status = 429 as const;
 }
 
 export function esAppError(e: unknown): e is AppError {

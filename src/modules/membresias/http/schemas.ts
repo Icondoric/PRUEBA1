@@ -22,19 +22,29 @@ const id = (queEs: string) =>
 export const cotizacionQuerySchema = z.object({
   clienteId: id('un cliente'),
   planId: id('un plan'),
-  inicio: z.string().optional(),
+  inicio: z.string().max(10).optional(),
 });
 
 export const ventaInputSchema = z.object({
   clienteId: id('un cliente'),
   planId: id('un plan'),
   metodo: z.enum(METODOS_PAGO, { error: 'Elegí cómo pagó' }),
-  inicio: z.string().optional().nullable(),
+  inicio: z.string().max(10).optional().nullable(),
   nota: z
     .string()
     .max(200, 'La nota no puede pasar de 200 caracteres')
     .optional()
     .nullable(),
+});
+
+/** Hasta 100 clientes, como "3,8,15": los de una página de la lista. */
+export const coberturasQuerySchema = z.object({
+  clienteIds: z
+    .string()
+    .max(1000)
+    .regex(/^\d{1,9}(,\d{1,9})*$/, 'Se esperan números de cliente separados por coma')
+    .transform((texto) => [...new Set(texto.split(',').map(Number))])
+    .refine((ids) => ids.length <= 100, 'No más de 100 clientes por consulta'),
 });
 
 export const historialQuerySchema = z.object({
